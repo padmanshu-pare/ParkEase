@@ -1,0 +1,53 @@
+const Floor = require('../models/Floor');
+const ParkingLayout = require('../models/ParkingLayout');
+const asyncHandler = require('../utils/asyncHandler');
+const httpError = require('../utils/httpError');
+const { assertFacility } = require('../services/access');
+const { validateElements, syncSlots } = require('../services/layoutService');
+const { emitAvailability } = require('../sockets');
+
+async function floorFor(user, floorId) {
+  const floor = await Floor.findById(floorId);
+  if (!floor) throw httpError(404, 'Floor not found');
+  await assertFacility(user, floor.facility);
+  return floor;
+}
+
+exports.getLayout = asyncHandler(async (req, res) => {
+  const floor = await floorFor(req.user, req.params.floorId);
+  const layout = await ParkingLayout.findOne({ floor: floor._id }).lean();
+  res.json(
+    layout || {
+      floor: floor._id,
+      facility: floor.facility,
+      canvas: { width: 1000, height: 600 },
+      elements: [],
+      publishedElements: [],
+      status: 'draft',
+    }
+  );
+});
+
+exports.saveDraft = asyncHandler(async (req, res) => {
+  const floor = await floorFor(req.user, req.params.floorId);
+  const elements = validateElements(req.body.elements);
+  const layout = await ParkingLayout.findOneAndUpdate(
+    { floor: floor._id },
+    { $set: { elements, facility: floor.facility, status: 'draft' } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+  res.json({ status: layout.status, updatedAt: layout.updatedAt });
+});
+
+exports.publish = asyncHandler(async (req, res) => {
+  const floor = await floorFor(req.user, req.params.floorId);
+  const elements = validateElements(req.body.elements);
+  const layout = await ParkingLayout.findOneAndUpdate(
+    { floor: floor._id },
+    { $set: { elements, publishedElements: elements, facility: floor.facility, status: 'published', publishedAt: new Date() } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+  await syncSlots(layout);
+  emitAvailability(floor.facility, floor._id);
+  res.json({ status: layout.status, publishedAt: layout.publishedAt });
+});
