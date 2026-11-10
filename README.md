@@ -52,14 +52,19 @@ ParkEase replaces this with a single system where:
 
 ---
 
-## Planned (Phase 2 and later)
+## Roadmap
 
-- **Driver portal:** drivers sign up, find parking near them, and reserve a slot in advance.
-- **Reservations:** the data model is already in place, and the dashboard and entry screens are being built to use it.
-- **Public live availability page:** anyone can see how many slots are free before travelling.
-- **Online payments:** Razorpay will replace the current mock payment gateway. The integration point is already isolated in one service file.
-- **Reports and analytics:** occupancy trends, revenue summaries, and exportable PDF and Excel reports.
-- **Hardening and deployment:** automated tests, input rate limits, and production monitoring.
+ParkEase is being built in five phases.
+
+| Phase | Focus | Status |
+|---|---|---|
+| 1 | Manager panel | Complete |
+| 2 | Driver portal, reservations, public availability page | Planned |
+| 3 | Razorpay online payments | Planned |
+| 4 | Reports and analytics | Planned |
+| 5 | Testing, hardening, deployment | Planned |
+
+See [ROADMAP.md](ROADMAP.md) for the detailed plan of each phase.
 
 ---
 
