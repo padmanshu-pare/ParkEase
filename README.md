@@ -62,6 +62,44 @@ ParkEase replaces this with a single system where:
 - **Hardening and deployment:** automated tests, input rate limits, and production monitoring.
 
 ---
+Phase 2: Driver Portal, Reservations, Public Page
+
+Ye phase driver ko system me laata hai. Ab tak sirf manager use karta tha.
+
+Driver portal
+
+Driver khud sign-up karega (email ya phone + password) aur login karega.
+Driver profile me apni vehicles (number plate) save kar sakega.
+Nearby facilities ya facility list dekhega, aur har facility ki live slot availability.
+
+Reservations
+
+Driver ek facility me time window (start aur end) ke liye slot book karega.
+Reservation ka status: pending, confirmed, active, completed, cancelled.
+Driver apni reservation cancel kar sakega (cancel policy ke saath).
+Manager ke dashboard par aaj ki reservations dikhengi. Jab vehicle aaye, manager reservation ko entry se link karega, aur slot reserved se occupied ho jayega.
+Double-booking ek time window me bhi roki jayegi, ye database level par hoga.
+
+Public live availability page
+
+Bina login ke koi bhi dekh sake ki facility me kitne slots free hain.
+Ye Socket.IO se live update hoga, aur sirf count dikhega, vehicle ki details nahi.
+
+Admin monitoring
+
+Drivers ki list, kisi ko deactivate karna, aur reservations ka overview.
+
+Milestone: driver sign-up karke reservation kar sake, manager use entry par confirm kar sake, aur public page par availability badle.
+
+Phase 3: Razorpay Payment Gateway
+Mock payment (server/services/paymentGateway.js) ko Razorpay SDK se replace karna.
+Reservation ke liye online payment (advance ya full), aur exit par online checkout.
+Order create karna, client par payment karna, aur server par signature verify karna.
+Webhook route jo Razorpay ke signature ko verify kare, taaki payment status reliable ho.
+Refund flow cancelled reservations ke liye.
+Test mode me pehle test karna, phir live keys.
+
+Milestone: driver online pay karke reservation confirm kare, aur webhook se payment status update ho.
 
 ## Technology
 
