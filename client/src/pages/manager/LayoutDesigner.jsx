@@ -151,7 +151,7 @@ export default function LayoutDesigner() {
         <button className="btn-secondary" onClick={() => persist(false)} disabled={!floorId || Boolean(busy)}><Save className="h-4 w-4" />Save draft</button>
         <button className="btn-primary" onClick={() => persist(true)} disabled={!floorId || Boolean(busy)}><UploadCloud className="h-4 w-4" />Publish</button>
       </PageHeader>
-
+      <div className="grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)_250px]"></div>
       {!floors.length ? (
         <div className="card p-10 text-center text-sm text-slate-500">This facility has no floors yet. Ask your admin to add one under Facilities.</div>
       ) : (
