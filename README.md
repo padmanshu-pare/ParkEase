@@ -101,6 +101,27 @@ Test mode me pehle test karna, phir live keys.
 
 Milestone: driver online pay karke reservation confirm kare, aur webhook se payment status update ho.
 
+Phase 4: Reports and Analytics
+Daily, weekly aur monthly occupancy trends.
+Revenue summary (cash, UPI, card, online alag-alag).
+Peak hours ka chart, aur slot-wise utilization.
+PDF aur Excel export.
+Filters: facility, floor, date range.
+Charts ke liye Chart.js ya Recharts.
+
+Milestone: admin ek date range select karke PDF ya Excel report download kar sake.
+
+Phase 5: Testing, Hardening, Deployment
+Backend ke liye automated tests (fee calculation, double-booking, auth).
+Frontend ke liye main flows ke tests.
+Security: rate limiting login par, input validation, helmet, CORS ko strict karna.
+Logs aur error monitoring.
+Production deployment: Render (backend), Vercel (frontend), MongoDB Atlas (database), ya chaho to Razorpay webhook ke liye stable public URL.
+Keep-alive ya paid hosting ka decision (abhi free tier par sleep hota hai).
+Documentation: README update, API docs.
+
+Milestone: tests pass hon, security checklist complete ho, aur production par bina sleep issue ke chale.
+
 ## Technology
 
 | Layer | Technology |
