@@ -18,7 +18,7 @@ ParkEase replaces this with a single system where:
 - every slot has a live status,
 - a vehicle is assigned to a slot in a way that cannot be double-booked,
 - the fee is calculated by the system, not by hand,
-- every record can be searched, filtered, and exported...
+- every record can be searched, filtered, and exported.
 
 ---
 
@@ -118,3 +118,4 @@ ParkEase/
 ## Status
 
 Phase 1 (manager panel) is complete and deployed. Testing with real facilities and feedback will decide the order of the Phase 2 work.
+phase 2 will start soon till then see the current 
