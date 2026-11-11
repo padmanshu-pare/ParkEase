@@ -18,7 +18,7 @@ ParkEase replaces this with a single system where:
 - every slot has a live status,
 - a vehicle is assigned to a slot in a way that cannot be double-booked,
 - the fee is calculated by the system, not by hand,
-- every record can be searched, filtered, and exported.
+- every record can be searched, filtered, and exported...
 
 ---
 
