@@ -3,6 +3,7 @@ const Facility = require('../models/Facility');
 const Floor = require('../models/Floor');
 const ParkingSlot = require('../models/ParkingSlot');
 const ParkingLayout = require('../models/ParkingLayout');
+const ParkingRecord = require('../models/ParkingRecord');
 const PricingRule = require('../models/PricingRule');
 const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
@@ -97,6 +98,8 @@ exports.deleteFloor = asyncHandler(async (req, res) => {
   const floor = await ownFloor(req.user, req.params.floorId);
   const busy = await ParkingSlot.countDocuments({ floor: floor._id, status: { $in: ['occupied', 'reserved'] } });
   if (busy) throw httpError(409, 'This floor has occupied or reserved slots. Clear them first.');
+  const history = await ParkingRecord.exists({ floor: floor._id });
+  if (history) throw httpError(409, 'This floor has parking records and cannot be deleted. Keep it to preserve parking history.');
   await ParkingSlot.deleteMany({ floor: floor._id });
   await ParkingLayout.deleteOne({ floor: floor._id });
   await floor.deleteOne();

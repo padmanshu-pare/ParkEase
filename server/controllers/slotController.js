@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const ParkingSlot = require('../models/ParkingSlot');
 const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
-const { accessibleFacilityIds, assertFacility } = require('../services/access');
+const { accessibleFacilityIds, assertFacility, assertActiveFacility } = require('../services/access');
 const { escapeRegex } = require('../utils/plate');
 const { emitAvailability } = require('../sockets');
 
@@ -34,7 +34,7 @@ exports.setStatus = asyncHandler(async (req, res) => {
   }
   const slot = await ParkingSlot.findById(req.params.id);
   if (!slot) throw httpError(404, 'Slot not found');
-  await assertFacility(req.user, slot.facility);
+  await assertActiveFacility(req.user, slot.facility);
 
   // Atomic: never touch a slot that is occupied by a parked vehicle
   const updated = await ParkingSlot.findOneAndUpdate({ _id: slot._id, status: { $ne: 'occupied' } }, { status }, { new: true });

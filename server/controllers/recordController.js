@@ -7,7 +7,7 @@ const Payment = require('../models/Payment');
 const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
 const { normalizeReg, isValidReg, escapeRegex } = require('../utils/plate');
-const { accessibleFacilityIds, assertFacility } = require('../services/access');
+const { accessibleFacilityIds, assertFacility, assertActiveFacility } = require('../services/access');
 const { getRule, calculateCharge } = require('../services/pricing');
 const { emitAvailability } = require('../sockets');
 const { blockedSlotIds } = require('../services/availability');
@@ -22,7 +22,7 @@ exports.entry = asyncHandler(async (req, res) => {
   const regNumber = normalizeReg(req.body.regNumber);
   if (!isValidReg(regNumber)) throw httpError(400, 'Enter a valid vehicle number (letters and digits only, 5 to 12 characters)');
   if (!mongoose.isValidObjectId(slotId)) throw httpError(400, 'Select a parking slot');
-  await assertFacility(req.user, facilityId);
+  await assertActiveFacility(req.user, facilityId);
 
   if (await ParkingRecord.exists({ regNumber, status: 'active' })) {
     throw httpError(409, `${regNumber} is already parked. Complete its exit before a new entry.`);
@@ -31,7 +31,10 @@ exports.entry = asyncHandler(async (req, res) => {
   // Booking link: explicit reservationId, or automatically the plate's booking for this facility
   let reservation = null;
   if (reservationId) {
-    reservation = await Reservation.findOne({ _id: reservationId, facility: facilityId, status: 'confirmed' });
+    const now = new Date();
+    reservation = await Reservation.findOne({
+      _id: reservationId, facility: facilityId, status: 'confirmed', startTime: { $lte: now }, endTime: { $gte: now },
+    });
     if (!reservation) throw httpError(404, 'Reservation not found or no longer confirmed');
   } else {
     reservation = await findReservationForEntry(facilityId, regNumber);
@@ -113,41 +116,48 @@ exports.exit = asyncHandler(async (req, res) => {
   if (!['cash', 'upi', 'card', 'online'].includes(method)) throw httpError(400, 'Choose a valid payment method');
   const existing = await ParkingRecord.findOne({ _id: req.params.id, status: 'active' });
   if (!existing) throw httpError(404, 'Active parking record not found (it may already be checked out)');
-  await assertFacility(req.user, existing.facility);
+  await assertActiveFacility(req.user, existing.facility);
 
   // Amount is always recalculated on the server - never trusted from the client.
   const rule = await getRule(existing.facility);
   const exitTime = new Date();
   const charge = calculateCharge(rule, existing.entryTime, exitTime);
 
-  // Atomic status flip prevents double checkout.
-  const record = await ParkingRecord.findOneAndUpdate(
-    { _id: existing._id, status: 'active' },
-    { status: 'completed', exitTime, durationMinutes: charge.minutes, amount: charge.amount, exitedBy: req.user._id },
-    { new: true }
-  );
-  if (!record) throw httpError(409, 'This vehicle has already been checked out');
+  // Completing the record, taking payment and releasing the slot are one operation.
+  // A failed payment write must not leave a completed record in an occupied slot.
+  const session = await mongoose.startSession();
+  let record;
+  try {
+    await session.withTransaction(async () => {
+      record = await ParkingRecord.findOneAndUpdate(
+        { _id: existing._id, status: 'active' },
+        { status: 'completed', exitTime, durationMinutes: charge.minutes, amount: charge.amount, exitedBy: req.user._id },
+        { new: true, session }
+      );
+      if (!record) throw httpError(409, 'This vehicle has already been checked out');
 
-  let payment = null;
-  if (charge.amount > 0) {
-    const stamp = Date.now().toString(36).toUpperCase();
-    payment = await Payment.create({
-      facility: record.facility,
-      record: record._id,
-      regNumber: record.regNumber,
-      amount: charge.amount,
-      method,
-      status: 'successful',
-      transactionId: transactionId || `${method.toUpperCase()}-${stamp}`,
-      receiptNo: `PE-${stamp}-${Math.floor(Math.random() * 900 + 100)}`,
-      gateway: 'offline',
-      recordedBy: req.user._id,
+      if (charge.amount > 0) {
+        const stamp = Date.now().toString(36).toUpperCase();
+        const [payment] = await Payment.create([{
+          facility: record.facility, record: record._id, regNumber: record.regNumber, amount: charge.amount,
+          method, status: 'successful', transactionId: transactionId || `${method.toUpperCase()}-${stamp}`,
+          receiptNo: `PE-${stamp}-${Math.floor(Math.random() * 900 + 100)}`,
+          gateway: 'offline', recordedBy: req.user._id,
+        }], { session });
+        await ParkingRecord.updateOne({ _id: record._id }, { payment: payment._id }, { session });
+      }
+
+      const released = await ParkingSlot.updateOne(
+        { _id: record.slot, status: 'occupied', currentRecord: record._id },
+        { status: 'available', currentRecord: null },
+        { session }
+      );
+      if (released.modifiedCount !== 1) throw httpError(409, 'Parking slot state changed; checkout was cancelled');
+      if (record.reservation) await Reservation.updateOne({ _id: record.reservation }, { status: 'completed' }, { session });
     });
-    await ParkingRecord.updateOne({ _id: record._id }, { payment: payment._id });
+  } finally {
+    await session.endSession();
   }
-
-  await ParkingSlot.updateOne({ _id: record.slot, status: 'occupied' }, { status: 'available', currentRecord: null });
-  if (record.reservation) await Reservation.updateOne({ _id: record.reservation }, { status: 'completed' });
   emitAvailability(record.facility, record.floor);
 
   res.json({ ...withCharge(await populateRecord(ParkingRecord.findById(record._id)), rule), amount: charge.amount });

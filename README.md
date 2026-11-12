@@ -118,3 +118,4 @@ ParkEase/
 ## Status
 
 Phase 1 (manager panel) is complete and deployed. Testing with real facilities and feedback will decide the order of the Phase 2 work.
+phase 2 will start soon till then see the current 
