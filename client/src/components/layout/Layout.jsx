@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Building2, PencilRuler, Grid3x3, LogIn, LogOut, History, Wallet, Users, Settings, Menu, X, ParkingSquare,
+  LayoutDashboard, Building2, PencilRuler, Grid3x3, LogIn, LogOut, History, Wallet, Users, Settings, Menu, X, ParkingSquare, CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FacilityProvider, useFacility } from '../../context/FacilityContext';
@@ -14,9 +14,11 @@ const NAV = [
   { to: '/slots', label: 'Parking slots', icon: Grid3x3 },
   { to: '/history', label: 'Parking history', icon: History },
   { to: '/payments', label: 'Payments', icon: Wallet },
+  { to: '/reservations', label: 'Reservations', icon: CalendarDays },
   { to: '/designer', label: 'Layout designer', icon: PencilRuler },
   { to: '/facilities', label: 'Facilities', icon: Building2, admin: true },
   { to: '/managers', label: 'Managers', icon: Users, admin: true },
+  { to: '/drivers', label: 'Drivers', icon: Users, admin: true },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

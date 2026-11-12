@@ -19,6 +19,8 @@ app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/pricing', require('./routes/pricingRoutes'));
 app.use('/api/reservations', require('./routes/reservationRoutes'));
+app.use('/api/driver', require('./routes/driverRoutes'));
+app.use('/api/public', require('./routes/publicRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);

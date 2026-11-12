@@ -10,6 +10,8 @@ const { normalizeReg, isValidReg, escapeRegex } = require('../utils/plate');
 const { accessibleFacilityIds, assertFacility } = require('../services/access');
 const { getRule, calculateCharge } = require('../services/pricing');
 const { emitAvailability } = require('../sockets');
+const { blockedSlotIds } = require('../services/availability');
+const { findReservationForEntry } = require('../services/reservations');
 
 const populateRecord = (q) =>
   q.populate('slot', 'name').populate('floor', 'name').populate('facility', 'name address').populate('payment');
@@ -26,12 +28,23 @@ exports.entry = asyncHandler(async (req, res) => {
     throw httpError(409, `${regNumber} is already parked. Complete its exit before a new entry.`);
   }
 
+  // Booking link: explicit reservationId, or automatically the plate's booking for this facility
   let reservation = null;
   if (reservationId) {
     reservation = await Reservation.findOne({ _id: reservationId, facility: facilityId, status: 'confirmed' });
     if (!reservation) throw httpError(404, 'Reservation not found or no longer confirmed');
+  } else {
+    reservation = await findReservationForEntry(facilityId, regNumber);
   }
-  const slotWasReserved = reservation && String(reservation.slot) === String(slotId);
+  if (reservation && String(reservation.slot) !== String(slotId)) {
+    const booked = await ParkingSlot.findById(reservation.slot).select('name').lean();
+    throw httpError(409, `This vehicle has a booking for slot ${booked ? booked.name : ''}. Park it in that slot.`);
+  }
+  // A walk-in cannot take a slot that is held for a booking starting soon
+  if (!reservation && (await blockedSlotIds(facilityId)).has(String(slotId))) {
+    throw httpError(409, 'This slot is reserved for a booking starting soon. Pick another slot.');
+  }
+  const slotWasReserved = Boolean(reservation);
 
   // Atomically claim the slot so two managers can never park into the same slot.
   const claimed = await ParkingSlot.findOneAndUpdate(

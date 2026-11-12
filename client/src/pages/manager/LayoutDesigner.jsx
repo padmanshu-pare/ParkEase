@@ -1,245 +1,393 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Stage, Layer, Group, Transformer } from 'react-konva';
-import { Car, Route, DoorOpen, DoorClosed, MoveRight, Copy, Trash2, Save, UploadCloud, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Square, Minus, LogIn, LogOut, ArrowRight, Trash2, Copy, Save, Send, Tags, Import, Loader2 } from 'lucide-react';
 import api, { errMsg } from '../../services/api';
 import { useFacility } from '../../context/FacilityContext';
-import { ElementBody } from '../../components/parking/ElementShapes';
-import { PageHeader, Spinner, Field, NoFacility, Badge } from '../../components/common/ui';
+import { PageHeader, Field, Modal, Spinner, NoFacility, Empty } from '../../components/common/ui';
+import { ElementBody, TYPE_STYLE } from '../../components/parking/ElementShapes';
 
 const CANVAS = { width: 1000, height: 600 };
 const GRID = 10;
-const SIZE = { slot: [70, 110], road: [300, 80], entry: [110, 40], exit: [110, 40], arrow: [100, 36] };
-const uid = () => `el_${Math.random().toString(36).slice(2, 9)}`;
-const snap = (n) => Math.round(n / GRID) * GRID;
-const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+const TOOLS = [
+  { type: 'slot', label: 'Slot', icon: Square },
+  { type: 'road', label: 'Road', icon: Minus },
+  { type: 'entry', label: 'Entry gate', icon: LogIn },
+  { type: 'exit', label: 'Exit gate', icon: LogOut },
+  { type: 'arrow', label: 'Arrow', icon: ArrowRight },
+];
+
+const DEFAULTS = {
+  slot: { width: 60, height: 40, label: '' },
+  road: { width: 160, height: 30, label: '' },
+  entry: { width: 90, height: 40, label: 'ENTRY' },
+  exit: { width: 90, height: 40, label: 'EXIT' },
+  arrow: { width: 80, height: 24, label: '' },
+};
+
+const uid = () => `el_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+const snap = (v) => Math.round(v / GRID) * GRID;
+const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+// Next free slot name like S01, S02 ... (skips names already in use)
+function nextSlotName(elements) {
+  const used = new Set(elements.filter((e) => e.type === 'slot').map((e) => e.label.trim().toLowerCase()));
+  let n = 1;
+  while (used.has(`s${String(n).padStart(2, '0')}`)) n += 1;
+  return `S${String(n).padStart(2, '0')}`;
+}
 
 export default function LayoutDesigner() {
-  const { selectedId, reload } = useFacility();
+  const { selectedId: facilityId, selected: facility } = useFacility() || {};
   const [floors, setFloors] = useState([]);
   const [floorId, setFloorId] = useState('');
   const [elements, setElements] = useState([]);
-  const [selId, setSelId] = useState(null);
+  const [selectedElId, setSelectedElId] = useState(null);
   const [status, setStatus] = useState('draft');
   const [dirty, setDirty] = useState(false);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState('');
-  const [prefix, setPrefix] = useState('A');
-  const [count, setCount] = useState(5);
-  const [boxW, setBoxW] = useState(900);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+
   const box = useRef(null);
-  const stageRef = useRef(null);
+  const [width, setWidth] = useState(800);
+  const nodeRefs = useRef({});
   const trRef = useRef(null);
 
-  const scale = Math.max(0.5, boxW / CANVAS.width);
-  const selected = elements.find((e) => e.id === selId);
-
-  // floors for facility
+  // Keep canvas sized to its container
   useEffect(() => {
-    if (!selectedId) return;
-    setFloors([]); setFloorId('');
-    api.get(`/facilities/${selectedId}/floors`).then((r) => { setFloors(r.data); setFloorId(r.data[0]?._id || ''); }).catch((e) => toast.error(errMsg(e)));
-  }, [selectedId]);
-
-  // layout for floor
-  useEffect(() => {
-    if (!floorId) { setElements([]); return; }
-    setLoading(true); setSelId(null);
-    api.get(`/layouts/${floorId}`).then((r) => { setElements(r.data.elements || []); setStatus(r.data.status); setDirty(false); })
-      .catch((e) => toast.error(errMsg(e))).finally(() => setLoading(false));
-  }, [floorId]);
-
-  useEffect(() => {
-    const ro = new ResizeObserver(([e]) => setBoxW(e.contentRect.width));
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
     if (box.current) ro.observe(box.current);
     return () => ro.disconnect();
-  }, [loading]);
+  }, []);
 
-  // attach transformer to the selected node
+  // Load floors for the selected facility
   useEffect(() => {
-    const tr = trRef.current;
-    if (!tr) return;
-    const node = selId && stageRef.current ? stageRef.current.findOne(`#${selId}`) : null;
-    tr.nodes(node ? [node] : []);
-    tr.getLayer()?.batchDraw();
-  }, [selId, elements, loading]);
+    if (!facilityId) return;
+    setFloors([]);
+    setFloorId('');
+    api.get(`/facilities/${facilityId}/floors`)
+      .then(({ data }) => {
+        setFloors(data);
+        setFloorId((cur) => (data.some((f) => f._id === cur) ? cur : data[0]?._id || ''));
+      })
+      .catch((e) => toast.error(errMsg(e)));
+  }, [facilityId]);
 
-  // warn before leaving with unsaved work
+  // Load layout for the selected floor
   useEffect(() => {
-    const h = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
-    window.addEventListener('beforeunload', h);
-    return () => window.removeEventListener('beforeunload', h);
-  }, [dirty]);
+    if (!floorId) return;
+    setLoading(true);
+    api.get(`/layouts/${floorId}`)
+      .then(({ data }) => {
+        setElements(data.elements || []);
+        setStatus(data.status || 'draft');
+        setDirty(false);
+        setSelectedElId(null);
+      })
+      .catch((e) => toast.error(errMsg(e)))
+      .finally(() => setLoading(false));
+  }, [floorId]);
 
-  const change = useCallback((fn) => { setElements(fn); setDirty(true); }, []);
-  const update = (id, patch) => change((els) => els.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  // Attach transformer to the selected element
+  useEffect(() => {
+    const node = selectedElId ? nodeRefs.current[selectedElId] : null;
+    if (trRef.current) {
+      trRef.current.nodes(node ? [node] : []);
+      trRef.current.getLayer()?.batchDraw();
+    }
+  }, [selectedElId, elements]);
 
-  const remove = useCallback(() => { if (selId) { change((els) => els.filter((e) => e.id !== selId)); setSelId(null); } }, [selId, change]);
-  const duplicate = useCallback(() => {
-    if (!selected) return;
-    const copy = { ...selected, id: uid(), x: clamp(selected.x + 20, 0, CANVAS.width - 20), y: clamp(selected.y + 20, 0, CANVAS.height - 20), label: selected.type === 'slot' ? '' : selected.label };
-    change((els) => [...els, copy]); setSelId(copy.id);
-    if (selected.type === 'slot') toast('Duplicated slot has no name yet. Give it one before publishing.', { icon: '✏️' });
-  }, [selected, change]);
-
+  // Delete / duplicate shortcuts
   useEffect(() => {
     const onKey = (e) => {
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
-      if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); remove(); }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); duplicate(); }
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElId) removeSelected();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && selectedElId) {
+        e.preventDefault();
+        duplicateSelected();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [remove, duplicate]);
+  });
 
-  const addShape = (type) => {
-    const [width, height] = SIZE[type];
-    const n = elements.filter((e) => e.type === type).length;
-    const el = { id: uid(), type, x: 60 + (n % 10) * 20, y: 60 + (n % 10) * 20, width, height, rotation: 0, label: type === 'entry' ? 'ENTRY' : type === 'exit' ? 'EXIT' : '' };
-    change((els) => [...els, el]); setSelId(el.id);
+  const commit = (updater) => {
+    setElements((prev) => (typeof updater === 'function' ? updater(prev) : updater));
+    setDirty(true);
   };
 
-  const addSlots = (override) => {
-    const p = prefix.trim().toUpperCase();
-    const n = clamp(parseInt(override ?? count, 10) || 1, 1, 60);
-    if (!p) return toast.error('Enter a slot prefix, for example A');
-    const re = new RegExp(`^${p}(\\d+)$`, 'i');
-    let next = Math.max(0, ...elements.filter((e) => e.type === 'slot').map((e) => (re.exec(e.label || '') ? parseInt(re.exec(e.label)[1], 10) : 0))) + 1;
-    const bottom = elements.length ? Math.max(...elements.map((e) => e.y + e.height)) : 0;
-    let x = 40;
-    let y = elements.length ? clamp(snap(bottom + 20), 20, CANVAS.height - 130) : 80;
-    const made = [];
-    for (let i = 0; i < n; i++) {
-      if (x + 70 > CANVAS.width - 20) { x = 40; y = Math.min(y + 130, CANVAS.height - 120); }
-      made.push({ id: uid(), type: 'slot', x, y, width: 70, height: 110, rotation: 0, label: `${p}${String(next++).padStart(2, '0')}` });
-      x += 80;
-    }
-    change((els) => [...els, ...made]);
-    toast.success(`Added ${n} slot${n > 1 ? 's' : ''}. Drag them into position.`);
+  const scale = Math.max(0.3, width / CANVAS.width);
+  const selectedEl = elements.find((e) => e.id === selectedElId) || null;
+
+  const slotCount = useMemo(() => elements.filter((e) => e.type === 'slot').length, [elements]);
+
+  const addElement = (type) => {
+    const d = DEFAULTS[type];
+    const el = {
+      id: uid(),
+      type,
+      x: snap(CANVAS.width / 2 - d.width / 2 + (elements.length % 5) * 20),
+      y: snap(CANVAS.height / 2 - d.height / 2 + (elements.length % 5) * 20),
+      width: d.width,
+      height: d.height,
+      rotation: 0,
+      label: type === 'slot' ? nextSlotName(elements) : d.label,
+    };
+    commit((prev) => [...prev, el]);
+    setSelectedElId(el.id);
   };
 
-  const persist = async (publish) => {
-    if (publish) {
-      const unnamed = elements.filter((e) => e.type === 'slot' && !e.label.trim()).length;
-      if (unnamed) return toast.error(`${unnamed} slot${unnamed > 1 ? 's have' : ' has'} no name. Select and name each slot first.`);
-    }
-    setBusy(publish ? 'publish' : 'save');
+  const updateEl = (id, patch) => commit((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+
+  const removeSelected = () => {
+    if (!selectedElId) return;
+    commit((prev) => prev.filter((e) => e.id !== selectedElId));
+    setSelectedElId(null);
+  };
+
+  const duplicateSelected = () => {
+    if (!selectedEl) return;
+    const copy = { ...selectedEl, id: uid(), x: selectedEl.x + 20, y: selectedEl.y + 20 };
+    if (copy.type === 'slot') copy.label = nextSlotName(elements);
+    if (copy.type === 'entry' || copy.type === 'exit') copy.label = selectedEl.label;
+    commit((prev) => [...prev, copy]);
+    setSelectedElId(copy.id);
+  };
+
+  const applyBulkNames = (prefix, start, pad) => {
+    const slots = elements
+      .filter((e) => e.type === 'slot')
+      .sort((a, b) => (Math.round(a.y / 40) - Math.round(b.y / 40)) || a.x - b.x); // rows top to bottom, left to right
+    const ids = new Set(slots.map((s) => s.id));
+    const map = {};
+    slots.forEach((s, i) => {
+      map[s.id] = `${prefix}${String(Number(start) + i).padStart(pad, '0')}`;
+    });
+    const names = Object.values(map).map((n) => n.toLowerCase());
+    const dup = names.find((n, i) => names.indexOf(n) !== i);
+    if (dup) return toast.error('Naam duplicate ho rahe hain, prefix ya start badlo');
+    commit((prev) => prev.map((e) => (ids.has(e.id) ? { ...e, label: map[e.id] } : e)));
+    setBulkOpen(false);
+    toast.success(`${slots.length} slots ka naam set ho gaya`);
+  };
+
+  const confirmLeave = () => !dirty || window.confirm('Aapke changes save nahi hue hain. Floor badalne se ye chale jayenge. Continue?');
+
+  const saveDraft = async () => {
+    setBusy('save');
     try {
-      if (publish) { await api.post(`/layouts/${floorId}/publish`, { elements }); setStatus('published'); toast.success('Layout published. Slots are live.'); reload(); }
-      else { await api.put(`/layouts/${floorId}`, { elements }); setStatus('draft'); toast.success('Draft saved'); }
+      const { data } = await api.put(`/layouts/${floorId}`, { elements });
+      setStatus(data.status);
       setDirty(false);
-    } catch (e) { toast.error(errMsg(e)); }
-    finally { setBusy(''); }
+      toast.success('Draft save ho gaya');
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setBusy('');
+    }
   };
 
-  const switchFloor = (id) => {
-    if (dirty && !window.confirm('You have unsaved changes on this floor. Discard them?')) return;
-    setFloorId(id);
+  const publish = async () => {
+    const slotNames = elements.filter((e) => e.type === 'slot').map((e) => e.label.trim());
+    if (!slotNames.length) return toast.error('Publish se pehle kam se kam ek slot banao');
+    if (slotNames.some((n) => !n)) return toast.error('Har slot ka naam hona chahiye (jaise A01)');
+    if (!window.confirm(`Publish karne par ${slotNames.length} parking slots ban (ya update ho) jayenge. Continue?`)) return;
+    setBusy('publish');
+    try {
+      const { data } = await api.post(`/layouts/${floorId}/publish`, { elements });
+      setStatus(data.status);
+      setDirty(false);
+      toast.success(`Published. ${slotNames.length} slots sync ho gaye`);
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setBusy('');
+    }
   };
 
-  if (!selectedId) return <NoFacility />;
+  const copyFrom = async (sourceFloorId) => {
+    setBusy('copy');
+    try {
+      const { data } = await api.post(`/layouts/${floorId}/copy`, { sourceFloorId });
+      setElements(data.elements);
+      setDirty(true);
+      setSelectedElId(null);
+      setCopyOpen(false);
+      toast.success(`${data.copiedFrom} se layout copy ho gaya. Ab save/publish karo`);
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setBusy('');
+    }
+  };
 
-  const tool = (Icon, label, onClick) => (
-    <button type="button" className="btn-secondary justify-start" onClick={onClick}><Icon className="h-4 w-4" />{label}</button>
-  );
+  if (!facilityId) return <NoFacility />;
+
+  const otherFloors = floors.filter((f) => f._id !== floorId);
 
   return (
-    <>
-      <PageHeader title="Layout designer" subtitle="Draw the floor plan. Slot shapes become real parking slots when you publish.">
-        {dirty && <span className="text-xs font-semibold text-amber-600">Unsaved changes</span>}
-        <Badge status={status === 'published' ? 'completed' : 'pending'}>{status === 'published' ? 'Published' : 'Draft'}</Badge>
-        <button className="btn-secondary" onClick={() => persist(false)} disabled={!floorId || Boolean(busy)}><Save className="h-4 w-4" />Save draft</button>
-        <button className="btn-primary" onClick={() => persist(true)} disabled={!floorId || Boolean(busy)}><UploadCloud className="h-4 w-4" />Publish</button>
+    <div>
+      <PageHeader title="Layout designer" subtitle={`${facility?.name || ''} · Draft save karo, jab tayyar ho tab Publish karo`}>
+        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${status === 'published' ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-amber-50 text-amber-700 ring-amber-600/20'}`}>
+          {status === 'published' ? 'Published' : 'Draft'}{dirty ? ' · unsaved' : ''}
+        </span>
+        <select className="input w-auto" value={floorId} onChange={(e) => { if (confirmLeave()) setFloorId(e.target.value); }}>
+          {floors.map((f) => <option key={f._id} value={f._id}>{f.name}</option>)}
+        </select>
+        <button className="btn-secondary" disabled={!floorId || busy} onClick={() => setCopyOpen(true)}><Import className="h-4 w-4" />Copy from floor</button>
+        <button className="btn-secondary" disabled={!floorId || busy} onClick={saveDraft}>
+          {busy === 'save' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save draft
+        </button>
+        <button className="btn-primary" disabled={!floorId || busy} onClick={publish}>
+          {busy === 'publish' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Publish
+        </button>
       </PageHeader>
-      <div className="grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)_250px]"></div>
-      {!floors.length ? (
-        <div className="card p-10 text-center text-sm text-slate-500">This facility has no floors yet. Ask your admin to add one under Facilities.</div>
+
+      {!floors.length && facilityId ? (
+        <div className="card"><Empty title="Is facility me koi floor nahi hai">Admin se floor banwao, phir yahan design karo.</Empty></div>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[230px_1fr]">
-          <aside className="space-y-4">
-            <div className="card space-y-3 p-4">
-              <Field label="Floor">
-                <select className="input" value={floorId} onChange={(e) => switchFloor(e.target.value)}>{floors.map((f) => <option key={f._id} value={f._id}>{f.name}</option>)}</select>
-              </Field>
-            </div>
-            <div className="card space-y-2 p-4">
-              <p className="label">Parking slots</p>
-              <div className="flex gap-2">
-                <input className="input !w-16 text-center font-bold uppercase" maxLength={3} value={prefix} onChange={(e) => setPrefix(e.target.value)} aria-label="Slot prefix" />
-                <input className="input !w-16 text-center" type="number" min={1} max={60} value={count} onChange={(e) => setCount(e.target.value)} aria-label="How many slots" />
-                <button className="btn-primary flex-1" onClick={() => addSlots()}><Plus className="h-4 w-4" />Add</button>
-              </div>
-              <p className="text-xs text-slate-400">Adds {count || 1} four-wheeler slots named {prefix.toUpperCase() || 'A'}01, {prefix.toUpperCase() || 'A'}02…</p>
-            </div>
-            <div className="card grid gap-2 p-4">
-              <p className="label">Add to floor</p>
-              {tool(Car, 'Single slot', () => addSlots(1))}
-              {tool(Route, 'Road / pathway', () => addShape('road'))}
-              {tool(DoorOpen, 'Entry gate', () => addShape('entry'))}
-              {tool(DoorClosed, 'Exit gate', () => addShape('exit'))}
-              {tool(MoveRight, 'Direction arrow', () => addShape('arrow'))}
-            </div>
-          </aside>
+        <div className="grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)_250px]">
+          {/* Tools */}
+          <div className="card min-w-0 space-y-2 p-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Add</p>
+            {TOOLS.map(({ type, label, icon: Icon }) => (
+              <button key={type} className="btn-secondary w-full justify-start gap-2 px-3 text-sm" disabled={!floorId} onClick={() => addElement(type)}>
+                <Icon className="h-4 w-4" />{label}
+              </button>
+            ))}
+            <p className="pt-2 text-xs text-slate-400">Tip: element pe click karke select karo, drag karke move karo, corner se resize aur upar wale handle se rotate karo. Delete key se hatao, Ctrl+D se duplicate.</p>
+          </div>
 
-          <div className="min-w-0 space-y-4">
-            <div className="card p-3">
-              <div ref={box} className="overflow-x-auto rounded-lg border border-slate-200 bg-white" style={{ backgroundImage: 'radial-gradient(#e2e8f0 1px, transparent 1px)', backgroundSize: `${GRID * 2 * scale}px ${GRID * 2 * scale}px` }}>
-                {loading ? <div className="grid h-80 place-items-center"><Spinner /></div> : (
-                  <Stage
-                    ref={stageRef} width={CANVAS.width * scale} height={CANVAS.height * scale} scaleX={scale} scaleY={scale}
-                    onMouseDown={(e) => e.target === e.target.getStage() && setSelId(null)}
-                    onTouchStart={(e) => e.target === e.target.getStage() && setSelId(null)}
-                  >
-                    <Layer>
-                      {elements.map((el) => (
-                        <Group
-                          key={el.id} id={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} draggable
-                          onClick={() => setSelId(el.id)} onTap={() => setSelId(el.id)} onDragStart={() => setSelId(el.id)}
-                          onDragEnd={(e) => {
-                            const x = clamp(snap(e.target.x()), 0, CANVAS.width - 10);
-                            const y = clamp(snap(e.target.y()), 0, CANVAS.height - 10);
-                            e.target.position({ x, y });
-                            update(el.id, { x, y });
-                          }}
-                          onTransformEnd={(e) => {
-                            const n = e.target;
-                            const sx = n.scaleX(); const sy = n.scaleY();
-                            n.scaleX(1); n.scaleY(1);
-                            update(el.id, { x: snap(n.x()), y: snap(n.y()), width: Math.max(20, snap(el.width * sx)), height: Math.max(20, snap(el.height * sy)), rotation: Math.round(n.rotation()) });
-                          }}
-                        >
-                          <ElementBody el={el} />
-                        </Group>
-                      ))}
-                      <Transformer ref={trRef} rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]} anchorSize={9} borderStroke="#2563eb" anchorStroke="#2563eb" boundBoxFunc={(o, n) => (n.width < 20 || n.height < 20 ? o : n)} />
-                    </Layer>
-                  </Stage>
-                )}
-              </div>
-              <p className="mt-2 px-1 text-xs text-slate-400">Click a shape to select it. Drag to move, use the handles to resize or rotate. Delete key removes, Ctrl/Cmd + D duplicates.</p>
+          {/* Canvas */}
+          <div ref={box} className="w-full overflow-hidden rounded-lg border border-slate-200 bg-white" style={{ backgroundImage: 'radial-gradient(#e2e8f0 1px, transparent 1px)', backgroundSize: `${GRID * scale}px ${GRID * scale}px` }}>
+            {loading ? (
+              <div className="grid h-64 place-items-center"><Spinner /></div>
+            ) : (
+              <Stage
+                width={width}
+                height={CANVAS.height * scale}
+                scaleX={scale}
+                scaleY={scale}
+                onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedElId(null); }}
+                onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedElId(null); }}
+              >
+                <Layer>
+                  {elements.map((el) => (
+                    <Group
+                      key={el.id}
+                      ref={(node) => { if (node) nodeRefs.current[el.id] = node; else delete nodeRefs.current[el.id]; }}
+                      x={el.x}
+                      y={el.y}
+                      rotation={el.rotation || 0}
+                      draggable
+                      onClick={(e) => { e.cancelBubble = true; setSelectedElId(el.id); }}
+                      onTap={(e) => { e.cancelBubble = true; setSelectedElId(el.id); }}
+                      onDragEnd={(e) => {
+                        updateEl(el.id, {
+                          x: clamp(snap(e.target.x()), 0, CANVAS.width - el.width),
+                          y: clamp(snap(e.target.y()), 0, CANVAS.height - el.height),
+                        });
+                      }}
+                      onTransformEnd={(e) => {
+                        const node = e.target;
+                        const w = Math.max(10, el.width * node.scaleX());
+                        const h = Math.max(10, el.height * node.scaleY());
+                        node.scaleX(1);
+                        node.scaleY(1);
+                        updateEl(el.id, { x: snap(node.x()), y: snap(node.y()), width: snap(w) || 10, height: snap(h) || 10, rotation: Math.round(node.rotation()) });
+                      }}
+                    >
+                      <ElementBody el={el} style={el.type === 'slot' ? TYPE_STYLE.slot : undefined} />
+                    </Group>
+                  ))}
+                  <Transformer
+                    ref={trRef}
+                    rotateEnabled
+                    keepRatio={false}
+                    anchorSize={9}
+                    borderStroke="#2563eb"
+                    anchorStroke="#2563eb"
+                    boundBoxFunc={(oldB, newB) => (newB.width < 10 || newB.height < 10 ? oldB : newB)}
+                  />
+                </Layer>
+              </Stage>
+            )}
+          </div>
+
+          {/* Properties */}
+          <div className="card space-y-4 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-slate-900">Properties</p>
+              <span className="text-xs text-slate-500">{slotCount} slots</span>
             </div>
 
-            <div className="card p-4">
-              {selected ? (
-                <div className="flex flex-wrap items-end gap-3">
-                  <p className="mr-2 self-center text-sm font-bold capitalize text-slate-900">{selected.type === 'slot' ? 'Parking slot' : selected.type}</p>
-                  {selected.type !== 'arrow' && (
-                    <Field label={selected.type === 'slot' ? 'Slot name' : 'Label'}>
-                      <input className="input !w-32 font-bold uppercase" maxLength={20} value={selected.label} onChange={(e) => update(selected.id, { label: e.target.value })} placeholder={selected.type === 'slot' ? 'A01' : ''} />
-                    </Field>
-                  )}
-                  <Field label="Width"><input className="input !w-20" type="number" min={20} value={selected.width} onChange={(e) => update(selected.id, { width: Math.max(20, Number(e.target.value) || 20) })} /></Field>
-                  <Field label="Height"><input className="input !w-20" type="number" min={20} value={selected.height} onChange={(e) => update(selected.id, { height: Math.max(20, Number(e.target.value) || 20) })} /></Field>
-                  <Field label="Rotation"><input className="input !w-20" type="number" value={selected.rotation} onChange={(e) => update(selected.id, { rotation: Number(e.target.value) || 0 })} /></Field>
-                  <button className="btn-secondary" onClick={duplicate}><Copy className="h-4 w-4" />Duplicate</button>
-                  <button className="btn-danger" onClick={remove}><Trash2 className="h-4 w-4" />Delete</button>
+            {selectedEl ? (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{selectedEl.type}</p>
+                <Field label={selectedEl.type === 'slot' ? 'Slot name' : 'Label'} hint={selectedEl.type === 'slot' ? 'Jaise A01. Publish ke baad yahi naam slot pe dikhega.' : undefined}>
+                  <input className="input" value={selectedEl.label} maxLength={20} onChange={(e) => updateEl(selectedEl.id, { label: e.target.value })} />
+                </Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Width"><input className="input" type="number" min="10" value={selectedEl.width} onChange={(e) => updateEl(selectedEl.id, { width: Math.max(10, Number(e.target.value) || 10) })} /></Field>
+                  <Field label="Height"><input className="input" type="number" min="10" value={selectedEl.height} onChange={(e) => updateEl(selectedEl.id, { height: Math.max(10, Number(e.target.value) || 10) })} /></Field>
+                  <Field label="Rotation"><input className="input" type="number" value={selectedEl.rotation || 0} onChange={(e) => updateEl(selectedEl.id, { rotation: Number(e.target.value) || 0 })} /></Field>
                 </div>
-              ) : <p className="text-sm text-slate-500">Select a shape to edit its name, size and rotation.</p>}
+                <div className="flex gap-2">
+                  <button className="btn-secondary flex-1" onClick={duplicateSelected}><Copy className="h-4 w-4" />Duplicate</button>
+                  <button className="btn-danger flex-1" onClick={removeSelected}><Trash2 className="h-4 w-4" />Delete</button>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">Canvas par koi element select karo.</p>
+            )}
+
+            <div className="border-t border-slate-200 pt-4">
+              <button className="btn-secondary w-full" disabled={!slotCount} onClick={() => setBulkOpen(true)}><Tags className="h-4 w-4" />Bulk name slots</button>
             </div>
           </div>
         </div>
       )}
-    </>
-  );
 
+      <BulkNameModal open={bulkOpen} onClose={() => setBulkOpen(false)} onApply={applyBulkNames} />
+
+      <Modal open={copyOpen} onClose={() => setCopyOpen(false)} title="Copy layout from another floor">
+        {otherFloors.length ? (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-500">Is floor ka current draft replace ho jayega. Copy ke baad Save draft ya Publish karna na bhoolo.</p>
+            {otherFloors.map((f) => (
+              <button key={f._id} className="btn-secondary w-full justify-between" disabled={!!busy} onClick={() => copyFrom(f._id)}>
+                <span>{f.name}</span><span className="text-xs text-slate-400">{f.layoutStatus === 'none' ? 'no layout' : f.layoutStatus}</span>
+              </button>
+            ))}
+          </div>
+        ) : <p className="text-sm text-slate-500">Copy karne ke liye facility me dusra floor nahi hai.</p>}
+      </Modal>
+    </div>
+  );
+}
+
+function BulkNameModal({ open, onClose, onApply }) {
+  const [prefix, setPrefix] = useState('A');
+  const [start, setStart] = useState(1);
+  const [pad, setPad] = useState(2);
+  return (
+    <Modal open={open} onClose={onClose} title="Bulk name slots">
+      <div className="space-y-4">
+        <p className="text-sm text-slate-500">Selected nahi, sabhi slots ko naam milega. Order: upar wali row se neeche, left se right.</p>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Prefix"><input className="input" value={prefix} maxLength={5} onChange={(e) => setPrefix(e.target.value)} /></Field>
+          <Field label="Start"><input className="input" type="number" min="0" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
+          <Field label="Digits"><input className="input" type="number" min="1" max="4" value={pad} onChange={(e) => setPad(Number(e.target.value) || 2)} /></Field>
+        </div>
+        <p className="text-sm text-slate-600">Example: {prefix}{String(Number(start)).padStart(pad, '0')}, {prefix}{String(Number(start) + 1).padStart(pad, '0')}, ...</p>
+        <div className="flex justify-end gap-2">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={() => onApply(prefix.trim(), start, pad)}>Apply</button>
+        </div>
+      </div>
+    </Modal>
+  );
 }

@@ -17,12 +17,25 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  // Staff log in with the manager panel; drivers pass ['driver'] from the driver login page
+  const login = useCallback(async (email, password, allowedRoles = ['admin', 'manager']) => {
     const { data } = await api.post('/auth/login', { email, password });
-    if (!['admin', 'manager'].includes(data.user.role)) throw new Error('This panel is for admins and managers only.');
+    if (!allowedRoles.includes(data.user.role)) {
+      throw new Error(
+        allowedRoles.includes('driver')
+          ? 'This login is for drivers only. Staff should use the manager login.'
+          : 'This panel is for admins and managers only.'
+      );
+    }
     localStorage.setItem(TOKEN_KEY, data.token);
     setUser(data.user);
     return data.user;
+  }, []);
+
+  // Used after driver sign-up, which already returns a token
+  const startSession = useCallback((token, sessionUser) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    setUser(sessionUser);
   }, []);
 
   const logout = useCallback(() => {
@@ -31,5 +44,9 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  return <AuthContext.Provider value={{ user, loading, login, logout, isAdmin: user?.role === 'admin' }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, login, startSession, logout, isAdmin: user?.role === 'admin' }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

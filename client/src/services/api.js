@@ -13,10 +13,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const onLogin = window.location.pathname.startsWith('/login');
-    if (err.response?.status === 401 && !onLogin) {
+    const path = window.location.pathname;
+    const onLoginPage = path.startsWith('/login') || path.startsWith('/driver/login');
+    if (err.response?.status === 401 && !onLoginPage) {
       localStorage.removeItem(TOKEN_KEY);
-      window.location.href = '/login';
+      window.location.href = path.startsWith('/driver') ? '/driver/login' : '/login';
     }
     return Promise.reject(err);
   }

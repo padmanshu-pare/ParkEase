@@ -51,3 +51,23 @@ exports.publish = asyncHandler(async (req, res) => {
   emitAvailability(floor.facility, floor._id);
   res.json({ status: layout.status, publishedAt: layout.publishedAt });
 });
+
+exports.copyLayout = asyncHandler(async (req, res) => {
+  const target = await floorFor(req.user, req.params.floorId);
+  const source = await floorFor(req.user, req.body.sourceFloorId);
+  if (String(target._id) === String(source._id)) throw httpError(400, 'Choose a different floor to copy from');
+
+  const srcLayout = await ParkingLayout.findOne({ floor: source._id }).lean();
+  if (!srcLayout || !srcLayout.elements.length) throw httpError(404, 'The source floor has no layout to copy');
+
+  // Fresh element ids so the two floors never share ids
+  const stamp = Date.now().toString(36);
+  const elements = srcLayout.elements.map((e, i) => ({ ...e, id: `${e.id}_c${stamp}${i}` }));
+
+  await ParkingLayout.findOneAndUpdate(
+    { floor: target._id },
+    { $set: { elements, facility: target.facility, status: 'draft' } },
+    { upsert: true, setDefaultsOnInsert: true }
+  );
+  res.json({ elements, copiedFrom: source.name });
+});

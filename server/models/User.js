@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['admin', 'manager', 'driver'], default: 'manager' },
     // Facilities a manager is allowed to operate
     facilities: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Facility' }],
+    // Driver's saved number plates
+    driverVehicles: [{ regNumber: { type: String, uppercase: true, trim: true }, label: { type: String, trim: true, default: '' }, _id: false }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isActive: { type: Boolean, default: true },
   },
