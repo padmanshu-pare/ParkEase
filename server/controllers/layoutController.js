@@ -1,9 +1,10 @@
 const Floor = require('../models/Floor');
 const ParkingLayout = require('../models/ParkingLayout');
+const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
-const { assertFacility } = require('../services/access');
-const { validateElements, syncSlots } = require('../services/layoutService');
+const { assertFacility, assertActiveFacility } = require('../services/access');
+const { validateElements, validateSlotElements, syncSlots } = require('../services/layoutService');
 const { emitAvailability } = require('../sockets');
 
 async function floorFor(user, floorId) {
@@ -30,10 +31,13 @@ exports.getLayout = asyncHandler(async (req, res) => {
 
 exports.saveDraft = asyncHandler(async (req, res) => {
   const floor = await floorFor(req.user, req.params.floorId);
+  await assertActiveFacility(req.user, floor.facility);
   const elements = validateElements(req.body.elements);
   const layout = await ParkingLayout.findOneAndUpdate(
     { floor: floor._id },
-    { $set: { elements, facility: floor.facility, status: 'draft' } },
+    // Keep a previously published layout marked as published: `elements` is its
+    // editable draft while `publishedElements` remains the live floor plan.
+    { $set: { elements, facility: floor.facility } },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
   res.json({ status: layout.status, updatedAt: layout.updatedAt });
@@ -42,12 +46,22 @@ exports.saveDraft = asyncHandler(async (req, res) => {
 exports.publish = asyncHandler(async (req, res) => {
   const floor = await floorFor(req.user, req.params.floorId);
   const elements = validateElements(req.body.elements);
-  const layout = await ParkingLayout.findOneAndUpdate(
-    { floor: floor._id },
-    { $set: { elements, publishedElements: elements, facility: floor.facility, status: 'published', publishedAt: new Date() } },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
-  );
-  await syncSlots(layout);
+  await assertActiveFacility(req.user, floor.facility);
+  validateSlotElements(elements);
+  const session = await mongoose.startSession();
+  let layout;
+  try {
+    await session.withTransaction(async () => {
+      layout = await ParkingLayout.findOneAndUpdate(
+        { floor: floor._id },
+        { $set: { elements, publishedElements: elements, facility: floor.facility, status: 'published', publishedAt: new Date() } },
+        { new: true, upsert: true, setDefaultsOnInsert: true, session }
+      );
+      await syncSlots(layout, session);
+    });
+  } finally {
+    await session.endSession();
+  }
   emitAvailability(floor.facility, floor._id);
   res.json({ status: layout.status, publishedAt: layout.publishedAt });
 });

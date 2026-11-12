@@ -16,4 +16,12 @@ async function assertFacility(user, facilityId) {
   if (!ids.some((id) => String(id) === String(facilityId))) throw httpError(403, 'You do not have access to this facility');
 }
 
-module.exports = { accessibleFacilityIds, assertFacility };
+// Access alone is not enough for mutations: a deactivated facility remains visible so
+// staff can review its history, but it must not accept operational changes.
+async function assertActiveFacility(user, facilityId) {
+  await assertFacility(user, facilityId);
+  const facility = await Facility.findOne({ _id: facilityId, isActive: true }).select('_id');
+  if (!facility) throw httpError(409, 'This facility is inactive and cannot accept operational changes');
+}
+
+module.exports = { accessibleFacilityIds, assertFacility, assertActiveFacility };

@@ -28,8 +28,8 @@ function validateElements(elements) {
 }
 
 // Creates / renames / removes ParkingSlot documents so they match the slot shapes in a layout.
-async function syncSlots(layout) {
-  const slotEls = layout.publishedElements.filter((e) => e.type === 'slot');
+function validateSlotElements(elements) {
+  const slotEls = elements.filter((e) => e.type === 'slot');
   const seen = new Set();
   for (const e of slotEls) {
     const name = e.label.trim();
@@ -38,7 +38,13 @@ async function syncSlots(layout) {
     seen.add(name.toLowerCase());
   }
 
-  const existing = await ParkingSlot.find({ floor: layout.floor });
+  return slotEls;
+}
+
+async function syncSlots(layout, session) {
+  const slotEls = validateSlotElements(layout.publishedElements);
+  const query = (model, filter) => session ? model.find(filter).session(session) : model.find(filter);
+  const existing = await query(ParkingSlot, { floor: layout.floor });
   const byElement = new Map(existing.map((s) => [s.elementId, s]));
   const keep = new Set(slotEls.map((e) => e.id));
 
@@ -49,15 +55,15 @@ async function syncSlots(layout) {
   for (const e of slotEls) {
     const name = e.label.trim();
     const slot = byElement.get(e.id);
-    if (!slot) await ParkingSlot.create({ facility: layout.facility, floor: layout.floor, name, elementId: e.id });
-    else if (slot.name !== name) await ParkingSlot.updateOne({ _id: slot._id }, { name });
+    if (!slot) await ParkingSlot.create([{ facility: layout.facility, floor: layout.floor, name, elementId: e.id }], session ? { session } : undefined);
+    else if (slot.name !== name) await ParkingSlot.updateOne({ _id: slot._id }, { name }, session ? { session } : undefined);
   }
-  if (removable.length) await ParkingSlot.deleteMany({ _id: { $in: removable.map((s) => s._id) } });
+  if (removable.length) await ParkingSlot.deleteMany({ _id: { $in: removable.map((s) => s._id) } }, session ? { session } : undefined);
 
-  const floorCount = await ParkingSlot.countDocuments({ floor: layout.floor });
-  await Floor.findByIdAndUpdate(layout.floor, { capacity: floorCount });
-  const total = await ParkingSlot.countDocuments({ facility: layout.facility });
-  await Facility.findByIdAndUpdate(layout.facility, { totalCapacity: total });
+  const floorCount = await ParkingSlot.countDocuments({ floor: layout.floor }).session(session || null);
+  await Floor.findByIdAndUpdate(layout.floor, { capacity: floorCount }, session ? { session } : undefined);
+  const total = await ParkingSlot.countDocuments({ facility: layout.facility }).session(session || null);
+  await Facility.findByIdAndUpdate(layout.facility, { totalCapacity: total }, session ? { session } : undefined);
 }
 
-module.exports = { validateElements, syncSlots };
+module.exports = { validateElements, validateSlotElements, syncSlots };
