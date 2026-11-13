@@ -5,12 +5,12 @@ const { protect, authorize } = require('../middleware/auth');
 
 const driverOnly = authorize('driver');
 
-// Public: driver sign-up
+// Public: driver sign-up (rate limited in app.js)
 router.post('/signup', c.signup);
 
-// Everything below needs a logged-in driver
+// Everything below needs a logged-in, active driver
 router.use(protect, driverOnly);
-router.route('/me').get(c.getProfile).put(c.updateProfile);
+router.route('/me').get(c.getProfile).put(c.updateProfile).delete(c.deleteAccount);
 router.post('/vehicles', c.addVehicle);
 router.delete('/vehicles/:regNumber', c.removeVehicle);
 router.get('/facilities', listFacilities);

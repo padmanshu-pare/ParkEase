@@ -70,6 +70,9 @@ export default function Availability() {
           </div>
         )}
         <p className="mt-8 text-center text-xs text-slate-400">Counts only. No vehicle details are shown on this page.</p>
+        <p className="mt-2 text-center text-xs text-slate-500">
+          <Link to="/privacy" className="hover:underline">Privacy</Link> · <Link to="/terms" className="hover:underline">Terms</Link> · <Link to="/refund" className="hover:underline">Refunds</Link>
+        </p>
       </main>
     </div>
   );

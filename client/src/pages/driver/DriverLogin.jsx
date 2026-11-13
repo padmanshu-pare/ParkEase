@@ -10,18 +10,20 @@ export default function DriverLogin() {
   const navigate = useNavigate();
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
 
   if (user) return <Navigate to={user.role === 'driver' ? '/driver' : '/'} replace />;
 
   const submit = async (e) => {
     e.preventDefault();
+    if (mode === 'signup' && !consent) return toast.error('Please accept the Privacy Policy and Terms');
     setBusy(true);
     try {
       if (mode === 'login') {
         await login(form.email, form.password, ['driver']);
       } else {
-        const { data } = await api.post('/driver/signup', form);
+        const { data } = await api.post('/driver/signup', { ...form, consent: true });
         startSession(data.token, data.user);
       }
       navigate('/driver');
@@ -48,15 +50,31 @@ export default function DriverLogin() {
           {mode === 'signup' && (
             <>
               <label className="label" htmlFor="name">Full name</label>
-              <input id="name" required className="input mb-4" value={form.name} onChange={set('name')} />
+              <input id="name" required maxLength={80} className="input mb-4" value={form.name} onChange={set('name')} />
               <label className="label" htmlFor="phone">Phone (optional)</label>
               <input id="phone" className="input mb-4" value={form.phone} onChange={set('phone')} placeholder="+91 98xxxxxxxx" />
             </>
           )}
           <label className="label" htmlFor="email">Email</label>
-          <input id="email" type="email" required className="input mb-4" value={form.email} onChange={set('email')} />
+          <input id="email" type="email" required maxLength={254} className="input mb-4" value={form.email} onChange={set('email')} />
           <label className="label" htmlFor="password">Password</label>
-          <input id="password" type="password" required minLength={6} className="input mb-6" value={form.password} onChange={set('password')} />
+          <input
+            id="password" type="password" required minLength={mode === 'signup' ? 8 : 1} maxLength={72}
+            className="input mb-1" value={form.password} onChange={set('password')}
+          />
+          {mode === 'signup' && <p className="mb-5 text-xs text-slate-500">At least 8 characters, with a letter and a number.</p>}
+          {mode === 'login' && <div className="mb-6" />}
+
+          {mode === 'signup' && (
+            <label className="mb-6 flex items-start gap-2.5 text-sm text-slate-600">
+              <input type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+              <span>
+                I agree to the <Link to="/terms" target="_blank" className="font-semibold text-brand-700">Terms</Link>,{' '}
+                <Link to="/privacy" target="_blank" className="font-semibold text-brand-700">Privacy Policy</Link> and{' '}
+                <Link to="/refund" target="_blank" className="font-semibold text-brand-700">Refund Policy</Link>.
+              </span>
+            </label>
+          )}
 
           <button className="btn-primary w-full" disabled={busy}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}{mode === 'login' ? 'Log in' : 'Sign up'}

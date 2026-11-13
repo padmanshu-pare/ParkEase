@@ -21,6 +21,7 @@ import DriverBook from './pages/driver/Book';
 import DriverBookings from './pages/driver/Bookings';
 import DriverProfile from './pages/driver/Profile';
 import PublicAvailability from './pages/public/Availability';
+import Legal from './pages/legal/Legal';
 
 export default function App() {
   return (
@@ -28,6 +29,9 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/driver/login" element={<DriverLogin />} />
       <Route path="/availability" element={<PublicAvailability />} />
+      <Route path="/privacy" element={<Legal kind="privacy" />} />
+      <Route path="/terms" element={<Legal kind="terms" />} />
+      <Route path="/refund" element={<Legal kind="refund" />} />
 
       <Route element={<ProtectedRoute driverOnly />}>
         <Route element={<DriverLayout />}>

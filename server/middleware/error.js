@@ -5,7 +5,10 @@ exports.errorHandler = (err, req, res, next) => {
   let status = err.status || 500;
   let message = err.message || 'Something went wrong';
 
-  if (err.name === 'ValidationError') {
+  if (err.type === 'entity.parse.failed') {
+    status = 400;
+    message = 'Request body is not valid JSON';
+  } else if (err.name === 'ValidationError') {
     status = 400;
     message = Object.values(err.errors).map((e) => e.message).join(', ');
   } else if (err.code === 11000) {
@@ -17,6 +20,10 @@ exports.errorHandler = (err, req, res, next) => {
     message = 'Invalid id or value';
   }
 
-  if (status >= 500) console.error(err);
+  // Server errors: log the details on the server, send a generic message to the browser
+  if (status >= 500) {
+    console.error(err);
+    message = 'Something went wrong on our side. Please try again.';
+  }
   res.status(status).json({ message });
 };
