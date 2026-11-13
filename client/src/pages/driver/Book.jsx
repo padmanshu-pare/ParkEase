@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import api, { errMsg } from '../../services/api';
 import { PageHeader, Spinner } from '../../components/common/ui';
+import DemoBanner from '../../components/common/DemoBanner';
 
 const pad = (n) => String(n).padStart(2, '0');
 const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -57,7 +58,7 @@ export default function Book() {
     const end = new Date(start.getTime() + Number(form.hours) * 3600000);
     setBusy(true);
     try {
-      await api.post('/driver/reservations', {
+      const { data: created } = await api.post('/driver/reservations', {
         facilityId: id,
         floorId: form.floorId || undefined,
         startTime: start.toISOString(),
@@ -65,7 +66,11 @@ export default function Book() {
         regNumber: form.regNumber,
         vehicleLabel: form.label,
       });
-      toast.success('Slot booked');
+      if (created.status === 'pending_payment') {
+        toast('Slot held for 15 minutes. Pay on My bookings to confirm.', { icon: '⏱️' });
+      } else {
+        toast.success('Slot booked');
+      }
       navigate('/driver/bookings');
     } catch (err) {
       toast.error(errMsg(err));
@@ -81,6 +86,7 @@ export default function Book() {
       <Link to="/driver" className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-800"><ArrowLeft className="h-4 w-4" />All facilities</Link>
       <PageHeader title={data.facility.name} subtitle={`${data.facility.address}${data.facility.city ? `, ${data.facility.city}` : ''}`} />
 
+      <DemoBanner />
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <form onSubmit={submit} className="card space-y-5 p-6">
           <div className="grid gap-4 sm:grid-cols-2">

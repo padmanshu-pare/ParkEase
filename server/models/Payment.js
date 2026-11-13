@@ -12,7 +12,9 @@ const paymentSchema = new Schema(
     status: { type: String, enum: ['pending', 'successful', 'failed', 'refunded'], default: 'successful' },
     transactionId: { type: String, index: true },
     receiptNo: { type: String, unique: true },
-    gateway: { type: String, default: 'offline' }, // 'offline' | 'mock' | 'razorpay' (later)
+    gateway: { type: String, default: 'offline' }, // 'offline' | 'demo' | 'razorpay' (later)
+    refundId: String,
+    refundedAt: Date,
     paidAt: { type: Date, default: Date.now },
     recordedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },

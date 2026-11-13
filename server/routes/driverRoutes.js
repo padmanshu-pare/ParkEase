@@ -17,5 +17,6 @@ router.get('/facilities', listFacilities);
 router.get('/facilities/:id', c.getFacility);
 router.route('/reservations').get(c.myReservations).post(c.createReservation);
 router.post('/reservations/:id/cancel', c.cancelMine);
+router.post('/reservations/:id/pay', c.payMine);
 
 module.exports = router;

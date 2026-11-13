@@ -9,7 +9,7 @@ const SlotHold = require('../models/SlotHold');
 const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
 const { normalizeReg, isValidReg } = require('../utils/plate');
-const { parseWindow, createReservation, cancelReservation } = require('../services/reservations');
+const { parseWindow, createReservation, cancelReservation, payReservation } = require('../services/reservations');
 const { availabilitySummary } = require('../services/availability');
 const { validatePassword } = require('../services/password');
 
@@ -195,4 +195,18 @@ exports.cancelMine = asyncHandler(async (req, res) => {
   const reservation = await Reservation.findOne({ _id: id, driver: req.user._id });
   if (!reservation) throw httpError(404, 'Booking not found');
   res.json(await cancelReservation(reservation));
+});
+
+// Demo payment for a booking that is awaiting payment
+exports.payMine = asyncHandler(async (req, res) => {
+  const id = str(req.params.id);
+  if (!mongoose.isValidObjectId(id)) throw httpError(404, 'Booking not found');
+  const { reservation, payment } = await payReservation(id, req.user._id);
+  res.json({
+    reservation,
+    receiptNo: payment.receiptNo,
+    transactionId: payment.transactionId,
+    amount: payment.amount,
+    demo: true,
+  });
 });

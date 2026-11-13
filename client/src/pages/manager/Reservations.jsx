@@ -12,6 +12,7 @@ const STATUS = {
   completed: 'bg-slate-100 text-slate-600 ring-slate-500/20',
   cancelled: 'bg-red-50 text-red-700 ring-red-600/20',
   expired: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  pending_payment: 'bg-amber-50 text-amber-700 ring-amber-600/20',
 };
 const pad = (n) => String(n).padStart(2, '0');
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };

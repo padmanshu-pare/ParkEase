@@ -1,16 +1,25 @@
-// Payment gateway abstraction. Phase 1 uses a mock gateway so the whole flow can be tested.
-// When you move to Razorpay, implement the same two functions with the Razorpay SDK
-// (orders.create + signature/webhook verification) and switch GATEWAY=razorpay in .env.
+// Payment gateway. DEMO MODE: nothing is charged and no bank is contacted.
+// Before go-live, add a "razorpay" object with the same three functions (createOrder,
+// verifyPayment, refund) that calls the Razorpay SDK, and return it from getGateway().
+// Callers in reservations.js do not change.
 const crypto = require('crypto');
 
-const mock = {
-  name: 'mock',
+const demo = {
+  name: 'demo',
+  isDemo: true,
   async createOrder({ amount, receipt }) {
-    return { orderId: `mock_order_${crypto.randomBytes(5).toString('hex')}`, amount, currency: 'INR', receipt };
+    return { orderId: `demo_order_${crypto.randomBytes(6).toString('hex')}`, amount, currency: 'INR', receipt };
   },
   async verifyPayment({ orderId }) {
-    return { verified: Boolean(orderId), transactionId: `mock_txn_${crypto.randomBytes(5).toString('hex')}` };
+    return { verified: Boolean(orderId), transactionId: `DEMO-${crypto.randomBytes(5).toString('hex').toUpperCase()}` };
+  },
+  async refund({ transactionId, amount }) {
+    return { refundId: `DEMO-REF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`, transactionId, amount, status: 'processed' };
   },
 };
 
-module.exports = mock;
+function getGateway() {
+  return demo;
+}
+
+module.exports = { getGateway, demo };
