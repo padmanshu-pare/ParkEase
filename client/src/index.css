@@ -28,3 +28,55 @@
   .print-area, .print-area * { visibility: visible; }
   .print-area { position: absolute; inset: 0; padding: 24px; }
 }
+
+/* ---------- Dark mode ----------
+   Pages keep their Tailwind classes. When <html> has class "dark",
+   these overrides swap the colours, so every screen follows the theme. */
+.dark { color-scheme: dark; }
+.dark body { background-color: #0b1120; color: #e2e8f0; }
+
+.dark .bg-white { background-color: #111a2e; }
+.dark .bg-slate-50 { background-color: #0b1120; }
+.dark .bg-slate-100 { background-color: #1a2439; }
+.dark .bg-slate-200 { background-color: #26334d; }
+.dark .hover\:bg-slate-50:hover { background-color: #17213a; }
+.dark .hover\:bg-slate-100:hover { background-color: #1a2439; }
+
+.dark .text-slate-900 { color: #f1f5f9; }
+.dark .text-slate-800 { color: #e2e8f0; }
+.dark .text-slate-700 { color: #cbd5e1; }
+.dark .text-slate-600 { color: #b6c2d4; }
+.dark .text-slate-500 { color: #94a3b8; }
+.dark .text-slate-400 { color: #7c8aa3; }
+
+.dark .border-slate-100 { border-color: #1f2b44; }
+.dark .border-slate-200 { border-color: #26334d; }
+.dark .border-slate-300 { border-color: #33415f; }
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1f2b44; }
+
+.dark .bg-brand-50 { background-color: rgba(37, 99, 235, 0.2); }
+.dark .text-brand-700 { color: #93c5fd; }
+.dark .text-brand-600 { color: #60a5fa; }
+
+.dark .bg-green-50 { background-color: rgba(22, 163, 74, 0.15); }
+.dark .text-green-700 { color: #86efac; }
+.dark .text-green-600 { color: #4ade80; }
+.dark .bg-red-50 { background-color: rgba(220, 38, 38, 0.15); }
+.dark .text-red-700 { color: #fca5a5; }
+.dark .text-red-600 { color: #f87171; }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.15); }
+.dark .text-amber-700 { color: #fcd34d; }
+.dark .bg-blue-50 { background-color: rgba(37, 99, 235, 0.15); }
+.dark .text-blue-700, .dark .text-blue-800 { color: #bfdbfe; }
+
+.dark .input { background-color: #0f1728; border-color: #33415f; color: #e2e8f0; }
+.dark .input::placeholder { color: #64748b; }
+.dark .input:disabled { background-color: #1a2439; }
+.dark .label { color: #b6c2d4; }
+.dark .th { color: #94a3b8; }
+.dark .card { background-color: #111a2e; border-color: #26334d; }
+.dark .btn-secondary { background-color: #15203a; border-color: #33415f; color: #e2e8f0; }
+.dark .btn-secondary:hover { background-color: #1c2a4a; }
+.dark .btn-ghost { color: #cbd5e1; }
+.dark .btn-ghost:hover { background-color: #1a2439; }
+.dark .plate { background-color: #3b2f12; border-color: #facc15; color: #fde68a; }
