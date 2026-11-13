@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ParkEase: Smart Parking Management</title>
+<meta name="description" content="ParkEase is a MERN-based smart parking system: live slot availability, visual layout designer, number plate entry and exit, driver bookings, and automatic fee billing." />
+<style>
+  :root { --bg:#f8fafc; --surface:#fff; --text:#0f172a; --muted:#475569; --line:#e2e8f0; --brand:#2563eb; --brand-d:#1d4ed8; --navy:#0b1737; --ok:#16a34a; --warn:#d97706; --soon:#64748b; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--text); background:var(--bg); line-height:1.6; }
+  a { color: var(--brand-d); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  header.top { position: sticky; top:0; z-index:10; background: var(--navy); color:#fff; }
+  header.top .wrap { display:flex; align-items:center; justify-content:space-between; height:60px; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; color:#fff; text-decoration:none; }
+  .logo { width:32px; height:32px; border-radius:8px; background:var(--brand); display:grid; place-items:center; font-weight:900; }
+  nav a { color:#cbd5e1; text-decoration:none; font-size:14px; margin-left:18px; }
+  nav a:hover { color:#fff; }
+  .hero { background: linear-gradient(135deg, var(--navy), #1e3a8a); color:#fff; padding: 72px 0 64px; }
+  .hero h1 { font-size: clamp(30px, 5vw, 46px); line-height:1.15; margin:0 0 14px; letter-spacing:-0.02em; }
+  .hero p { font-size: 18px; color:#dbeafe; max-width: 680px; margin: 0 0 24px; }
+  .pill { display:inline-block; padding:4px 12px; border-radius:999px; font-size:13px; font-weight:700; margin-right:8px; margin-bottom:8px; }
+  .pill.done { background:#dcfce7; color:#166534; }
+  .pill.next { background:#fef3c7; color:#92400e; }
+  .pill.plan { background:#e2e8f0; color:#334155; }
+  .btn { display:inline-block; padding:12px 20px; border-radius:10px; font-weight:700; text-decoration:none; margin-right:10px; margin-top:8px; }
+  .btn.primary { background:#fff; color:var(--navy); }
+  .btn.ghost { border:1px solid #93c5fd; color:#fff; }
+  section { padding: 56px 0; }
+  section.alt { background: var(--surface); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  h2 { font-size: 28px; margin: 0 0 8px; letter-spacing:-0.01em; }
+  .lead { color:var(--muted); margin:0 0 28px; max-width:720px; }
+  .grid { display:grid; gap:18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .card h3 { margin:0 0 8px; font-size:18px; }
+  .card p, .card li { color:var(--muted); font-size:15px; margin:0; }
+  .card ul { padding-left:18px; margin:8px 0 0; }
+  .tag { display:inline-block; font-size:12px; font-weight:700; padding:3px 9px; border-radius:6px; margin-bottom:10px; }
+  .t-done { background:#dcfce7; color:#166534; } .t-next { background:#fef3c7; color:#92400e; } .t-plan { background:#e2e8f0; color:#334155; }
+  figure { margin:0; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  figure img { width:100%; display:block; }
+  figcaption { padding:14px 18px; color:var(--muted); font-size:14px; }
+  figcaption strong { color:var(--text); }
+  .shots { display:grid; gap:22px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .todo { border:2px dashed #cbd5e1; border-radius:14px; padding:22px; color:var(--muted); background:#fff; }
+  .todo strong { color:var(--text); }
+  .roadmap { position:relative; padding-left:26px; }
+  .roadmap:before { content:""; position:absolute; left:8px; top:6px; bottom:6px; width:2px; background:var(--line); }
+  .step { position:relative; margin-bottom:22px; }
+  .step:before { content:""; position:absolute; left:-24px; top:6px; width:14px; height:14px; border-radius:50%; background:var(--brand); }
+  .step.todo-dot:before { background: var(--soon); }
+  .step h3 { margin:0 0 4px; font-size:19px; }
+  .step p { margin:0; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; background:var(--surface); border-radius:12px; overflow:hidden; border:1px solid var(--line); font-size:15px; }
+  th, td { text-align:left; padding:12px 14px; border-bottom:1px solid var(--line); }
+  th { background:#f1f5f9; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  code { background:#f1f5f9; padding:2px 6px; border-radius:6px; font-size:13px; }
+  footer { background:var(--navy); color:#94a3b8; padding:28px 0; font-size:14px; }
+  footer a { color:#cbd5e1; }
+  @media (max-width: 720px) { nav { display:none; } .hero { padding:48px 0; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="logo">P</span>ParkEase</a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#screens">Screens</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#status">Status</a>
+    </nav>
+  </div>
+</header>
+
+<div id="top" class="hero">
+  <div class="wrap">
+    <span class="pill done">Phase 1 done</span><span class="pill done">Phase 2 done</span><span class="pill next">Phase 3 in progress</span><span class="pill plan">Phase 4 and 5 planned</span>
+    <h1>Smart parking, run from one screen.</h1>
+    <p>ParkEase shows which slots are free in real time, records vehicles in and out by number plate, bills automatically, and lets drivers book a slot in advance. Built with MongoDB, Express, React and Node.js.</p>
+    <a class="btn primary" href="#screens">See the screens</a>
+    <a class="btn ghost" href="#roadmap">View the roadmap</a>
+  </div>
+</div>
+
+<section id="problem">
+  <div class="wrap">
+    <h2>The problem</h2>
+    <p class="lead">Most small and mid-sized parking lots still track cars on paper. Staff don't know what is free, cars get lost, two people can assign the same slot, and billing at exit depends on memory.</p>
+    <div class="grid">
+      <div class="card"><h3>Unknown availability</h3><p>No one knows how many slots are free until they drive in.</p></div>
+      <div class="card"><h3>Double assignment</h3><p>Two staff members can park two cars in the same slot.</p></div>
+      <div class="card"><h3>Manual billing</h3><p>Fees are calculated by hand, which leads to errors and disputes.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="alt">
+  <div class="wrap">
+    <h2>What it does</h2>
+    <p class="lead">Built in phases. Each phase works on its own and is tagged in Git.</p>
+    <div class="grid">
+      <div class="card">
+        <span class="tag t-done">Phase 1 · Manager panel</span>
+        <h3>Facilities and layouts</h3>
+        <ul><li>Drag-and-drop layout designer (slots, roads, gates, arrows)</li><li>Draft and publish, bulk slot naming, copy from another floor</li><li>Add floors from the designer</li></ul>
+      </div>
+      <div class="card">
+        <span class="tag t-done">Phase 1 · Operations</span>
+        <h3>Entry and exit</h3>
+        <ul><li>Number plate read from a photo (Tesseract.js), verified by staff</li><li>Slot claimed atomically: no double parking</li><li>Fee calculated on the server, receipt printed</li></ul>
+      </div>
+      <div class="card">
+        <span class="tag t-done">Phase 1 · Dashboard</span>
+        <h3>Live view</h3>
+        <ul><li>Floor-wise availability and live floor plan</li><li>Updates through Socket.IO, no refresh needed</li><li>Slot status filters, grid and map views</li></ul>
+      </div>
+      <div class="card">
+        <span class="tag t-done">Phase 1 · History and money</span>
+        <h3>History and payments</h3>
+        <ul><li>Filter by vehicle, date, status</li><li>Sort by time, amount, duration, or payment type</li><li>CSV export, payment summary</li></ul>
+      </div>
+      <div class="card">
+        <span class="tag t-done">Phase 2 · Drivers</span>
+        <h3>Driver portal and bookings</h3>
+        <ul><li>Driver sign-up with consent, saved vehicles</li><li>Book a time window; double-booking blocked in the database</li><li>Cancel up to 1 hour before start</li><li>Live public availability page (counts only)</li></ul>
+      </div>
+      <div class="card">
+        <span class="tag t-next">Phase 3 · Payments (demo)</span>
+        <h3>Booking payments</h3>
+        <ul><li>Paid bookings held for 15 minutes until paid</li><li>Demo payment with receipt and refund record</li><li>Razorpay replaces the demo in Phase 3</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="wrap">
+    <h2>Screens</h2>
+    <p class="lead">Screenshots from the running app.</p>
+    <div class="shots">
+      <figure>
+        <img src="images/layout-designer.png" alt="Layout designer with slots A01 to A19, an entry gate, and a road" />
+        <figcaption><strong>Layout designer.</strong> Drag slots, roads and gates onto a floor. Save as draft, then publish to create real slots.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/parking-history.png" alt="Parking history table with vehicle, slot, entry, exit, duration, amount, payment and status" />
+        <figcaption><strong>Parking history.</strong> Every entry and exit, with filters, sorting and CSV export.</figcaption>
+      </figure>
+    </div>
+
+    <h3 style="margin-top:36px">Screens still to add</h3>
+    <div class="todo">
+      <p>Take these screenshots from the live app and save them in <code>images/</code> with the names shown. Then add a <code>&lt;figure&gt;</code> for each one.</p>
+      <ul>
+        <li><strong>dashboard.png</strong>: manager dashboard with stats and live floor plan</li>
+        <li><strong>vehicle-entry.png</strong>: plate scan and slot selection</li>
+        <li><strong>vehicle-exit.png</strong>: charges and payment choice</li>
+        <li><strong>payments.png</strong>: payments page after the total fix</li>
+        <li><strong>driver-facilities.png</strong>: driver find-parking list</li>
+        <li><strong>driver-book.png</strong>: booking form with availability</li>
+        <li><strong>driver-bookings.png</strong>: my bookings with pay and cancel</li>
+        <li><strong>availability.png</strong>: public live availability page</li>
+        <li><strong>admin-drivers.png</strong>: admin driver monitoring</li>
+        <li><strong>dark-mode.png</strong>: dashboard in dark mode</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="architecture" class="alt">
+  <div class="wrap">
+    <h2>Architecture</h2>
+    <p class="lead">One repository, one API, two front-ends (manager panel and driver portal) served from the same backend.</p>
+    <table>
+      <tr><th>Layer</th><th>Technology</th><th>Where it runs</th></tr>
+      <tr><td>Frontend</td><td>React, Vite, Tailwind, React Konva</td><td>Vercel</td></tr>
+      <tr><td>Backend API</td><td>Node.js, Express, Socket.IO</td><td>Render</td></tr>
+      <tr><td>Database</td><td>MongoDB with Mongoose</td><td>MongoDB Atlas</td></tr>
+      <tr><td>Auth</td><td>JWT, bcryptjs, role checks</td><td>Backend</td></tr>
+      <tr><td>Security</td><td>Helmet, rate limits, input sanitising, password policy, consent</td><td>Backend and Vercel headers</td></tr>
+      <tr><td>Plate reading</td><td>Tesseract.js</td><td>Browser</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <h2>Roadmap</h2>
+    <p class="lead">What is done, what is next, and what comes after.</p>
+    <div class="roadmap">
+      <div class="step"><span class="tag t-done">Done</span><h3>Phase 1: Manager panel</h3><p>Facilities, layout designer, slots, dashboard, entry and exit, fees, history and payments.</p></div>
+      <div class="step"><span class="tag t-done">Done</span><h3>Phase 2: Driver portal, bookings, public page</h3><p>Driver sign-up, vehicles, reservations, double-booking protection, live public availability, admin driver monitoring.</p></div>
+      <div class="step"><span class="tag t-next">In progress</span><h3>Phase 3: Payments</h3><p>Demo payment is built. Next: Razorpay SDK, checkout, signature verification, webhook, real refunds, and an online option at exit.</p></div>
+      <div class="step todo-dot"><span class="tag t-plan">Planned</span><h3>Phase 4: Reports and analytics</h3><p>Daily, weekly and monthly occupancy trends. Revenue split by cash, UPI, card and online. Peak-hour charts and slot-wise use. PDF and Excel export. Filters by facility, floor and date range (Chart.js or Recharts).</p></div>
+      <div class="step todo-dot"><span class="tag t-plan">Planned</span><h3>Phase 5: Testing, hardening, deployment</h3><p>Automated tests for fees, double-booking and auth. Frontend flow tests. Full Content Security Policy and subresource integrity. Cookie-based login. Logs and error monitoring with retention. Accessibility audit. Keep-alive or paid hosting. API documentation.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="status" class="alt">
+  <div class="wrap">
+    <h2>Status</h2>
+    <p class="lead">Current state of the project.</p>
+    <table>
+      <tr><th>Area</th><th>Status</th></tr>
+      <tr><td>Manager panel</td><td>Live</td></tr>
+      <tr><td>Driver portal and bookings</td><td>Live</td></tr>
+      <tr><td>Public availability page</td><td>Live</td></tr>
+      <tr><td>Demo payments</td><td>Built, testing</td></tr>
+      <tr><td>Razorpay</td><td>Not started (needs account and keys)</td></tr>
+      <tr><td>Reports</td><td>Not started</td></tr>
+      <tr><td>Legal pages (privacy, terms, refunds)</td><td>Draft, needs lawyer review</td></tr>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    ParkEase · Built by Padmanshu Pare · <a href="https://github.com/padmanshu-pare/ParkEase">Source on GitHub</a> · <a href="https://park-ease-henna.vercel.app">Live app</a>
+  </div>
+</footer>
+
+</body>
+</html>
