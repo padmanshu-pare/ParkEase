@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { ParkingSquare, Building2, CalendarDays, UserRound, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import ThemeToggle from '../common/ThemeToggle';
 
 const NAV = [
   { to: '/driver', label: 'Find parking', icon: Building2, end: true },
@@ -30,6 +31,7 @@ export default function DriverLayout() {
         </nav>
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-slate-500 md:inline">Hi, {user.name.split(' ')[0]}</span>
+          <ThemeToggle className="btn-ghost btn-sm" />
           <button className="btn-ghost btn-sm" onClick={() => { logout(); navigate('/driver/login'); }}>
             <LogOut className="h-4 w-4" /><span className="hidden sm:inline">Log out</span>
           </button>

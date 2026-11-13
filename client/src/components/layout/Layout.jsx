@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { FacilityProvider, useFacility } from '../../context/FacilityContext';
 import { Spinner } from '../common/ui';
+import ThemeToggle from '../common/ThemeToggle';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -48,6 +49,7 @@ function Shell() {
       <div className="border-t border-navy-700 p-4">
         <p className="truncate text-sm font-bold text-white">{user.name}</p>
         <p className="mb-3 truncate text-xs capitalize text-slate-400">{user.role}</p>
+        <ThemeToggle className="mb-2 w-full bg-navy-800 text-slate-200 hover:bg-navy-700 hover:text-white" />
         <button className="btn w-full justify-start bg-navy-800 text-slate-200 hover:bg-navy-700" onClick={() => { logout(); navigate('/login'); }}>
           <LogOut className="h-4 w-4" />Log out
         </button>
@@ -68,6 +70,7 @@ function Shell() {
         <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
           <button className="btn-ghost btn-sm lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle className="btn-ghost btn-sm lg:hidden" />
             <span className="hidden text-xs font-semibold text-slate-500 sm:inline">Facility</span>
             <select className="input !w-auto min-w-[200px]" value={selectedId} onChange={(e) => select(e.target.value)} aria-label="Select facility" disabled={!facilities.length}>
               {!facilities.length && <option value="">No facilities</option>}

@@ -12,6 +12,9 @@ export const fmtDuration = (mins) => {
   return h ? `${h}h ${m}m` : `${m}m`;
 };
 
-export const todayISO = () => new Date().toISOString().slice(0, 10);
+export const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 export const normalizeReg = (v = '') => v.toUpperCase().replace(/[^A-Z0-9]/g, '');
 export const STATUS_LABEL = { available: 'Available', occupied: 'Occupied', reserved: 'Reserved', maintenance: 'Maintenance' };

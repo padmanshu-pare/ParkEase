@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Stage, Layer, Group, Transformer } from 'react-konva';
 import toast from 'react-hot-toast';
-import { Square, Minus, LogIn, LogOut, ArrowRight, Trash2, Copy, Save, Send, Tags, Import, Loader2 } from 'lucide-react';
+import { Square, Minus, LogIn, LogOut, ArrowRight, Trash2, Copy, Save, Send, Tags, Import, Loader2, Plus } from 'lucide-react';
 import api, { errMsg } from '../../services/api';
 import { useFacility } from '../../context/FacilityContext';
 import { PageHeader, Field, Modal, Spinner, NoFacility, Empty } from '../../components/common/ui';
@@ -50,6 +50,7 @@ export default function LayoutDesigner() {
   const [busy, setBusy] = useState('');
   const [bulkOpen, setBulkOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [newFloor, setNewFloor] = useState(null); // null = closed, string = name being typed
 
   const box = useRef(null);
   const [width, setWidth] = useState(800);
@@ -174,6 +175,26 @@ export default function LayoutDesigner() {
     toast.success(`${slots.length} slots ka naam set ho gaya`);
   };
 
+  const addFloor = async () => {
+    const name = (newFloor || '').trim();
+    if (!name) return toast.error('Floor ka naam likho');
+    if (!confirmLeave()) return;
+    const level = floors.reduce((m, f) => Math.max(m, Number(f.level) || 0), -1) + 1;
+    setBusy('floor');
+    try {
+      const { data } = await api.post(`/facilities/${facilityId}/floors`, { name, level });
+      const list = await api.get(`/facilities/${facilityId}/floors`);
+      setFloors(list.data);
+      setNewFloor(null);
+      setFloorId(data._id);
+      toast.success(`${name} add ho gaya`);
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setBusy('');
+    }
+  };
+
   const confirmLeave = () => !dirty || window.confirm('Aapke changes save nahi hue hain. Floor badalne se ye chale jayenge. Continue?');
 
   const saveDraft = async () => {
@@ -237,6 +258,17 @@ export default function LayoutDesigner() {
         <select className="input w-auto" value={floorId} onChange={(e) => { if (confirmLeave()) setFloorId(e.target.value); }}>
           {floors.map((f) => <option key={f._id} value={f._id}>{f.name}</option>)}
         </select>
+        {newFloor === null ? (
+          <button className="btn-secondary" disabled={!facilityId || !!busy} onClick={() => setNewFloor('')}><Plus className="h-4 w-4" />Add floor</button>
+        ) : (
+          <span className="flex items-center gap-2">
+            <input autoFocus className="input w-44" placeholder="e.g. Third Floor" value={newFloor} maxLength={40}
+              onChange={(e) => setNewFloor(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addFloor(); if (e.key === 'Escape') setNewFloor(null); }} />
+            <button className="btn-primary" disabled={!!busy} onClick={addFloor}>{busy === 'floor' && <Loader2 className="h-4 w-4 animate-spin" />}Add</button>
+            <button className="btn-ghost" onClick={() => setNewFloor(null)}>Cancel</button>
+          </span>
+        )}
         <button className="btn-secondary" disabled={!floorId || busy} onClick={() => setCopyOpen(true)}><Import className="h-4 w-4" />Copy from floor</button>
         <button className="btn-secondary" disabled={!floorId || busy} onClick={saveDraft}>
           {busy === 'save' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save draft

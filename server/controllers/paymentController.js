@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Payment = require('../models/Payment');
 const asyncHandler = require('../utils/asyncHandler');
 const { normalizeReg, escapeRegex } = require('../utils/plate');
@@ -8,7 +9,7 @@ exports.listPayments = asyncHandler(async (req, res) => {
   const filter = {};
   if (facility) {
     await assertFacility(req.user, facility);
-    filter.facility = facility;
+    filter.facility = new mongoose.Types.ObjectId(facility);
   } else {
     filter.facility = { $in: await accessibleFacilityIds(req.user) };
   }
@@ -17,8 +18,8 @@ exports.listPayments = asyncHandler(async (req, res) => {
   if (regNumber) filter.regNumber = new RegExp(escapeRegex(normalizeReg(regNumber)));
   if (from || to) {
     filter.paidAt = {};
-    if (from) filter.paidAt.$gte = new Date(`${from}T00:00:00`);
-    if (to) filter.paidAt.$lte = new Date(`${to}T23:59:59.999`);
+    if (from) filter.paidAt.$gte = new Date(`${from}T00:00:00+05:30`);
+    if (to) filter.paidAt.$lte = new Date(`${to}T23:59:59.999+05:30`);
   }
 
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);

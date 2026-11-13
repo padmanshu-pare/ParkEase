@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import api, { errMsg } from '../../services/api';
 import useAvailabilityFeed from '../../hooks/useAvailabilityFeed';
 import { Spinner } from '../../components/common/ui';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function Availability() {
   const [items, setItems] = useState(null);
@@ -26,7 +27,10 @@ export default function Availability() {
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-600"><ParkingSquare className="h-5 w-5" /></span>
           <span className="text-lg font-extrabold">ParkEase</span>
         </div>
-        <Link to="/driver/login" className="btn-primary btn-sm">Book a slot</Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="text-white hover:bg-navy-800" />
+          <Link to="/driver/login" className="btn-primary btn-sm">Book a slot</Link>
+        </div>
       </header>
 
       <main className="mx-auto max-w-4xl p-6">
