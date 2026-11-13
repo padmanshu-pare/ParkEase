@@ -164,12 +164,24 @@ exports.exit = asyncHandler(async (req, res) => {
 });
 
 // ---------- HISTORY ----------
+const IST = '+05:30'; // dates from the browser are Indian time
+
+// Sort keys the History page can send. Anything else falls back to newest entry first.
+const SORT_FIELDS = {
+  entry: 'entryTime',
+  exit: 'exitTime',
+  duration: 'durationMinutes',
+  amount: 'amount',
+  payment: 'paymentMethod',
+  vehicle: 'regNumber',
+};
+
 async function buildFilter(req) {
   const { facility, status, regNumber, from, to } = req.query;
   const filter = {};
   if (facility) {
     await assertFacility(req.user, facility);
-    filter.facility = facility;
+    filter.facility = new mongoose.Types.ObjectId(facility);
   } else {
     filter.facility = { $in: await accessibleFacilityIds(req.user) };
   }
@@ -177,8 +189,8 @@ async function buildFilter(req) {
   if (regNumber) filter.regNumber = new RegExp(escapeRegex(normalizeReg(regNumber)));
   if (from || to) {
     filter.entryTime = {};
-    if (from) filter.entryTime.$gte = new Date(`${from}T00:00:00`);
-    if (to) filter.entryTime.$lte = new Date(`${to}T23:59:59.999`);
+    if (from) filter.entryTime.$gte = new Date(`${from}T00:00:00${IST}`);
+    if (to) filter.entryTime.$lte = new Date(`${to}T23:59:59.999${IST}`);
   }
   return filter;
 }
@@ -187,10 +199,37 @@ exports.listRecords = asyncHandler(async (req, res) => {
   const filter = await buildFilter(req);
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, parseInt(req.query.limit, 10) || 15);
-  const [items, total] = await Promise.all([
-    populateRecord(ParkingRecord.find(filter).sort('-entryTime').skip((page - 1) * limit).limit(limit)).lean(),
-    ParkingRecord.countDocuments(filter),
+  const field = SORT_FIELDS[req.query.sort] || 'entryTime';
+  const dir = req.query.dir === 'asc' ? 1 : -1;
+
+  // Aggregation lets us sort by payment type, which lives in the Payment collection
+  const [result] = await ParkingRecord.aggregate([
+    { $match: filter },
+    { $lookup: { from: 'payments', localField: 'payment', foreignField: '_id', as: 'paymentDoc' } },
+    { $addFields: { paymentMethod: { $ifNull: [{ $arrayElemAt: ['$paymentDoc.method', 0] }, ''] } } },
+    { $sort: { [field]: dir, _id: dir } },
+    {
+      $facet: {
+        items: [
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
+          { $lookup: { from: 'parkingslots', localField: 'slot', foreignField: '_id', as: 'slotDoc' } },
+          { $lookup: { from: 'floors', localField: 'floor', foreignField: '_id', as: 'floorDoc' } },
+        ],
+        total: [{ $count: 'n' }],
+      },
+    },
   ]);
+
+  const items = (result?.items || []).map(({ slotDoc, floorDoc, paymentDoc, paymentMethod, ...r }) => ({
+    ...r,
+    slot: slotDoc?.[0] ? { _id: slotDoc[0]._id, name: slotDoc[0].name } : null,
+    floor: floorDoc?.[0] ? { _id: floorDoc[0]._id, name: floorDoc[0].name } : null,
+    payment: paymentDoc?.[0]
+      ? { _id: paymentDoc[0]._id, method: paymentDoc[0].method, status: paymentDoc[0].status }
+      : null,
+  }));
+  const total = result?.total?.[0]?.n || 0;
   res.json({ items, total, page, pages: Math.max(1, Math.ceil(total / limit)) });
 });
 
