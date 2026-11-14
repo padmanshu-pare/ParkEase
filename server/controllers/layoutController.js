@@ -32,6 +32,9 @@ exports.getLayout = asyncHandler(async (req, res) => {
 exports.saveDraft = asyncHandler(async (req, res) => {
   const floor = await floorFor(req.user, req.params.floorId);
   await assertActiveFacility(req.user, floor.facility);
+  if (Array.isArray(req.body.elements) && req.body.elements.length > 500) {
+    throw httpError(400, 'A floor layout can have at most 500 elements');
+  }
   const elements = validateElements(req.body.elements);
   const layout = await ParkingLayout.findOneAndUpdate(
     { floor: floor._id },
@@ -45,6 +48,9 @@ exports.saveDraft = asyncHandler(async (req, res) => {
 
 exports.publish = asyncHandler(async (req, res) => {
   const floor = await floorFor(req.user, req.params.floorId);
+  if (Array.isArray(req.body.elements) && req.body.elements.length > 500) {
+    throw httpError(400, 'A floor layout can have at most 500 elements');
+  }
   const elements = validateElements(req.body.elements);
   await assertActiveFacility(req.user, floor.facility);
   validateSlotElements(elements);

@@ -6,10 +6,11 @@ const Facility = require('../models/Facility');
 const Reservation = require('../models/Reservation');
 const PricingRule = require('../models/PricingRule');
 const SlotHold = require('../models/SlotHold');
+const Payment = require('../models/Payment');
 const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
 const { normalizeReg, isValidReg } = require('../utils/plate');
-const { parseWindow, createReservation, cancelReservation, payReservation } = require('../services/reservations');
+const { parseWindow, createReservation, cancelReservation, payReservation, withinOpeningHours } = require('../services/reservations');
 const { availabilitySummary } = require('../services/availability');
 const { validatePassword } = require('../services/password');
 
@@ -157,10 +158,13 @@ exports.createReservation = asyncHandler(async (req, res) => {
   const saved = req.user.driverVehicles.find((v) => v.regNumber === regNumber);
   if (!saved) throw httpError(400, 'Add this vehicle in your Profile before booking it');
 
-  const facility = await Facility.findOne({ _id: facilityId, isActive: true }).select('_id').lean();
+  const facility = await Facility.findOne({ _id: facilityId, isActive: true }).select('_id openTime closeTime').lean();
   if (!facility) throw httpError(404, 'Facility not found or inactive');
 
   const { start, end } = parseWindow(str(req.body.startTime), str(req.body.endTime));
+  if (!withinOpeningHours(start, end, facility.openTime, facility.closeTime)) {
+    throw httpError(400, `This facility is open from ${facility.openTime} to ${facility.closeTime}. Pick a time inside those hours.`);
+  }
 
   const clash = await Reservation.exists({
     driver: req.user._id,
@@ -210,3 +214,29 @@ exports.payMine = asyncHandler(async (req, res) => {
     demo: true,
   });
 });
+
+// Right to access: everything we hold about the driver, as a downloadable JSON
+exports.exportData = asyncHandler(async (req, res) => {
+  const reservations = await Reservation.find({ driver: req.user._id })
+    .populate('facility', 'name address city')
+    .populate('slot', 'name')
+    .populate('floor', 'name')
+    .lean();
+  const payments = await Payment.find({ reservation: { $in: reservations.map((r) => r._id) } })
+    .select('amount method status transactionId receiptNo paidAt refundedAt')
+    .lean();
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    profile: { name: req.user.name, email: req.user.email, phone: req.user.phone || '', consentAt: req.user.consentAt, consentVersion: req.user.consentVersion },
+    savedVehicles: req.user.driverVehicles,
+    bookings: reservations.map((r) => ({
+      facility: r.facility && r.facility.name, slot: r.slot && r.slot.name, floor: r.floor && r.floor.name,
+      regNumber: r.regNumber, startTime: r.startTime, endTime: r.endTime, status: r.status, amount: r.amount,
+      cancelledAt: r.cancelledAt, cancelReason: r.cancelReason,
+    })),
+    payments,
+  };
+  res.setHeader('Content-Disposition', 'attachment; filename="parkease-my-data.json"');
+  res.json(payload);
+});
+

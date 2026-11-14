@@ -43,7 +43,7 @@ export default function Reservations() {
 
   return (
     <div>
-      <PageHeader title="Reservations" subtitle="Bookings for the selected day. Vehicle entry links a booking automatically when the plate matches.">
+      <PageHeader title="Reservations" subtitle="Bookings for the selected day. Unpaid bookings hold a slot for 15 minutes, then release it automatically. Vehicle entry links a paid booking when the plate matches.">
         <input type="date" className="input w-auto" value={date} onChange={(e) => setDate(e.target.value)} />
       </PageHeader>
 

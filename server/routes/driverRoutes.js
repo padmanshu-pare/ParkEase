@@ -11,6 +11,7 @@ router.post('/signup', c.signup);
 // Everything below needs a logged-in, active driver
 router.use(protect, driverOnly);
 router.route('/me').get(c.getProfile).put(c.updateProfile).delete(c.deleteAccount);
+router.get('/me/export', c.exportData);
 router.post('/vehicles', c.addVehicle);
 router.delete('/vehicles/:regNumber', c.removeVehicle);
 router.get('/facilities', listFacilities);

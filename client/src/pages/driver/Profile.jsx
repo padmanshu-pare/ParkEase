@@ -56,6 +56,20 @@ export default function Profile() {
     }
   };
 
+  const downloadData = async () => {
+    try {
+      const res = await api.get('/driver/me/export', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'parkease-my-data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
+  };
+
   const deleteAccount = async () => {
     if (deleteText !== 'DELETE') return;
     if (!window.confirm('Delete your account? Upcoming bookings will be cancelled. This cannot be undone.')) return;
@@ -110,6 +124,12 @@ export default function Profile() {
             <button className="btn-secondary"><Plus className="h-4 w-4" />Add</button>
           </form>
         </div>
+      </div>
+
+      <div className="card mt-6 p-6">
+        <h2 className="font-bold text-slate-900">Your data</h2>
+        <p className="mb-4 mt-1 text-sm text-slate-600">Download a copy of your profile, vehicles, bookings and payment records as a JSON file.</p>
+        <button className="btn-secondary" onClick={downloadData}>Download my data</button>
       </div>
 
       <div className="card mt-6 border-red-200 p-6">

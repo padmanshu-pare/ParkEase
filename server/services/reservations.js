@@ -192,7 +192,31 @@ async function cancelReservation(reservation, reason = 'Cancelled by driver') {
   return updated;
 }
 
+const IST_OFFSET_MIN = 330;
+const toIST = (d) => new Date(d.getTime() + IST_OFFSET_MIN * 60000);
+const minutesOfDayIST = (d) => toIST(d).getUTCHours() * 60 + toIST(d).getUTCMinutes();
+const parseHM = (s) => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || ''));
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+
+// True if the booking fits inside the facility's opening hours (Indian time).
+// Supports overnight facilities, e.g. open 08:00, close 02:00.
+function withinOpeningHours(start, end, openTime, closeTime) {
+  const open = parseHM(openTime);
+  const close = parseHM(closeTime);
+  if (open === null || close === null) return true; // no hours set: no restriction
+  const s = minutesOfDayIST(start);
+  const e = minutesOfDayIST(end);
+  if (open < close) {
+    const sameDay = toIST(start).getUTCDate() === toIST(end).getUTCDate();
+    return s >= open && e <= close && sameDay;
+  }
+  return (s >= open || s < close) && (e > open || e <= close);
+}
+
 module.exports = {
+  withinOpeningHours,
   parseWindow,
   createReservation,
   cancelReservation,

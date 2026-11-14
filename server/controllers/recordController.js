@@ -18,7 +18,10 @@ const populateRecord = (q) =>
 
 // ---------- ENTRY ----------
 exports.entry = asyncHandler(async (req, res) => {
-  const { facilityId, floorId, slotId, ownerName, ownerPhone, reservationId } = req.body;
+  const { facilityId, floorId, slotId, reservationId } = req.body;
+  // Free-text limits: keeps stored data small and blocks oversized input
+  const ownerName = typeof req.body.ownerName === 'string' ? req.body.ownerName.trim().slice(0, 80) : undefined;
+  const ownerPhone = typeof req.body.ownerPhone === 'string' ? req.body.ownerPhone.trim().slice(0, 15) : undefined;
   const regNumber = normalizeReg(req.body.regNumber);
   if (!isValidReg(regNumber)) throw httpError(400, 'Enter a valid vehicle number (letters and digits only, 5 to 12 characters)');
   if (!mongoose.isValidObjectId(slotId)) throw httpError(400, 'Select a parking slot');
@@ -112,7 +115,8 @@ exports.getActive = asyncHandler(async (req, res) => {
 });
 
 exports.exit = asyncHandler(async (req, res) => {
-  const { method = 'cash', transactionId } = req.body;
+  const { method = 'cash' } = req.body;
+  const transactionId = typeof req.body.transactionId === 'string' ? req.body.transactionId.trim().slice(0, 64) : undefined;
   if (!['cash', 'upi', 'card', 'online'].includes(method)) throw httpError(400, 'Choose a valid payment method');
   const existing = await ParkingRecord.findOne({ _id: req.params.id, status: 'active' });
   if (!existing) throw httpError(404, 'Active parking record not found (it may already be checked out)');
