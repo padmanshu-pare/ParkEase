@@ -13,6 +13,11 @@ export default function Login() {
 
   if (user) return <Navigate to="/" replace />;
 
+  // Optional demo login. Only shown when VITE_DEMO_EMAIL and VITE_DEMO_PASSWORD are set at build time.
+  // The server enforces read-only access for this account, so the password is safe to show publicly.
+  const demoEmail = import.meta.env.VITE_DEMO_EMAIL;
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD;
+
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
@@ -48,6 +53,11 @@ export default function Login() {
           <label className="label" htmlFor="password">Password</label>
           <input id="password" type="password" required className="input mb-6" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           <button className="btn-primary w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />}Log in</button>
+          {demoEmail && demoPassword && (
+            <button type="button" className="btn-secondary mt-3 w-full" onClick={() => setForm({ email: demoEmail, password: demoPassword })}>
+              Fill demo login (read-only)
+            </button>
+          )}
         </form>
       </div>
     </div>

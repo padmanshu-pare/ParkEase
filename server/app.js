@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const { notFound, errorHandler } = require('./middleware/error');
 const { loginLimiter, signupLimiter, apiLimiter } = require('./middleware/rateLimit');
+const demoGuard = require('./middleware/demoGuard');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.json({ limit: '300kb' }));
 app.use(mongoSanitize());
 
 app.use('/api', apiLimiter);
+app.use('/api', demoGuard);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/driver/signup', signupLimiter);
 

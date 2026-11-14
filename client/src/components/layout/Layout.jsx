@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FacilityProvider, useFacility } from '../../context/FacilityContext';
 import { Spinner } from '../common/ui';
 import ThemeToggle from '../common/ThemeToggle';
+import DemoModeBanner from '../common/DemoModeBanner';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -79,6 +80,7 @@ function Shell() {
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {user?.isDemo && <DemoModeBanner />}
           {loading ? <div className="grid place-items-center py-24"><Spinner /></div> : <Outlet />}
         </main>
       </div>

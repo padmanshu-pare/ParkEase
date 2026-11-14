@@ -1,21 +1,23 @@
-# ParkEase pitch site
+# ParkEase showcase site
 
-A single static page to present ParkEase to investors, professors, and users.
+A single static page that presents the ParkEase project.
 
 ## Files
 - `index.html`: the whole site (no build step)
-- `images/`: real screenshots from the app
+- `images/`: screenshots used on the page
 
-## Before you share it
-1. Replace `[your-email]` in the final call-to-action with a real contact address.
-2. Fill in the business model prices once you decide them (currently marked "to be set").
-3. Re-take the screenshots after payments are finished, so the product looks current.
-4. Check the live demo link still works.
+## Add or replace screenshots
+1. Take the screenshot from the live app (Windows: Win + Shift + S).
+2. Save it in `images/` with the name listed on the page.
+3. Add a block in the "Screens" section:
+
+```html
+<figure>
+  <img src="images/dashboard.png" alt="Manager dashboard with live floor plan" />
+  <figcaption><strong>Dashboard.</strong> One line about what the screen does.</figcaption>
+</figure>
+```
 
 ## Publish
-- Vercel: New project, set the root directory to this folder, no build command.
-- GitHub Pages: keep this folder as `docs/` and enable Pages from `main` / `docs`.
-
-## Notes
-- The "live floor" in the hero is a demo animation for presentation. It does not show real data.
-- Nothing on the page claims user counts, revenue, or awards that are not verified.
+- Vercel: New Project, import the repo, set the root directory to this folder, no build command. Or drag the folder to any static host.
+- GitHub Pages: put this folder in `docs/` and enable Pages from `main` / `docs`.

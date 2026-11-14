@@ -4,7 +4,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
 
 const sign = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
-const publicUser = (u) => ({ id: u._id, name: u.name, email: u.email, phone: u.phone, role: u.role, facilities: u.facilities });
+const publicUser = (u) => ({ id: u._id, name: u.name, email: u.email, phone: u.phone, role: u.role, facilities: u.facilities, isDemo: Boolean(u.isDemo) });
 
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;

@@ -18,6 +18,8 @@ const userSchema = new mongoose.Schema(
     deletedAt: Date,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isActive: { type: Boolean, default: true },
+    // Read-only demo manager (see middleware/demoGuard.js)
+    isDemo: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

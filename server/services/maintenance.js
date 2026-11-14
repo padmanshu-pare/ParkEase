@@ -4,6 +4,7 @@
 const Reservation = require('../models/Reservation');
 const ParkingRecord = require('../models/ParkingRecord');
 const { expirePendingPayments } = require('./reservations');
+const { resetDemoIfDue } = require('./demo');
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -35,6 +36,7 @@ async function everyMinute() {
 
 async function hourly() {
   try {
+    await resetDemoIfDue();
     const anonymized = await anonymizeOldRecords();
     if (anonymized) console.log(`[maintenance] anonymized ${anonymized} old records`);
   } catch (err) {
