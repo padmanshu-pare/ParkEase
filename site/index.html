@@ -3,227 +3,521 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ParkEase: Smart Parking Management</title>
-<meta name="description" content="ParkEase is a MERN-based smart parking system: live slot availability, visual layout designer, number plate entry and exit, driver bookings, and automatic fee billing." />
+<title>ParkEase: Smart Parking, Managed in Real Time</title>
+<meta name="description" content="ParkEase shows live free parking slots, records vehicles by number plate, bills automatically, and lets drivers book ahead. Built on the MERN stack." />
+<meta property="og:title" content="ParkEase: Smart Parking, Managed in Real Time" />
+<meta property="og:description" content="Live slot availability, number plate entry and exit, automatic billing, and driver bookings in one platform." />
 <style>
-  :root { --bg:#f8fafc; --surface:#fff; --text:#0f172a; --muted:#475569; --line:#e2e8f0; --brand:#2563eb; --brand-d:#1d4ed8; --navy:#0b1737; --ok:#16a34a; --warn:#d97706; --soon:#64748b; }
+  :root {
+    --navy: #0a1633; --navy-2: #13244d; --brand: #3b82f6; --brand-2: #2563eb; --accent: #22c55e; --amber: #f59e0b;
+    --bg: #f5f8ff; --card: #ffffff; --text: #0f172a; --muted: #5b6b86; --line: #e2e8f4;
+    --radius: 18px; --shadow: 0 12px 40px -18px rgba(10,22,51,.35);
+  }
+  [data-theme="dark"] {
+    --bg: #0a1224; --card: #111c33; --text: #e6edf9; --muted: #9db0d0; --line: #24345a; --shadow: 0 12px 40px -18px #000;
+  }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--text); background:var(--bg); line-height:1.6; }
-  a { color: var(--brand-d); }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-  header.top { position: sticky; top:0; z-index:10; background: var(--navy); color:#fff; }
-  header.top .wrap { display:flex; align-items:center; justify-content:space-between; height:60px; }
-  .brand { display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; color:#fff; text-decoration:none; }
-  .logo { width:32px; height:32px; border-radius:8px; background:var(--brand); display:grid; place-items:center; font-weight:900; }
-  nav a { color:#cbd5e1; text-decoration:none; font-size:14px; margin-left:18px; }
-  nav a:hover { color:#fff; }
-  .hero { background: linear-gradient(135deg, var(--navy), #1e3a8a); color:#fff; padding: 72px 0 64px; }
-  .hero h1 { font-size: clamp(30px, 5vw, 46px); line-height:1.15; margin:0 0 14px; letter-spacing:-0.02em; }
-  .hero p { font-size: 18px; color:#dbeafe; max-width: 680px; margin: 0 0 24px; }
-  .pill { display:inline-block; padding:4px 12px; border-radius:999px; font-size:13px; font-weight:700; margin-right:8px; margin-bottom:8px; }
-  .pill.done { background:#dcfce7; color:#166534; }
-  .pill.next { background:#fef3c7; color:#92400e; }
-  .pill.plan { background:#e2e8f0; color:#334155; }
-  .btn { display:inline-block; padding:12px 20px; border-radius:10px; font-weight:700; text-decoration:none; margin-right:10px; margin-top:8px; }
-  .btn.primary { background:#fff; color:var(--navy); }
-  .btn.ghost { border:1px solid #93c5fd; color:#fff; }
-  section { padding: 56px 0; }
-  section.alt { background: var(--surface); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  h2 { font-size: 28px; margin: 0 0 8px; letter-spacing:-0.01em; }
-  .lead { color:var(--muted); margin:0 0 28px; max-width:720px; }
-  .grid { display:grid; gap:18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px; }
-  .card h3 { margin:0 0 8px; font-size:18px; }
-  .card p, .card li { color:var(--muted); font-size:15px; margin:0; }
-  .card ul { padding-left:18px; margin:8px 0 0; }
-  .tag { display:inline-block; font-size:12px; font-weight:700; padding:3px 9px; border-radius:6px; margin-bottom:10px; }
-  .t-done { background:#dcfce7; color:#166534; } .t-next { background:#fef3c7; color:#92400e; } .t-plan { background:#e2e8f0; color:#334155; }
-  figure { margin:0; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
-  figure img { width:100%; display:block; }
-  figcaption { padding:14px 18px; color:var(--muted); font-size:14px; }
-  figcaption strong { color:var(--text); }
-  .shots { display:grid; gap:22px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-  .todo { border:2px dashed #cbd5e1; border-radius:14px; padding:22px; color:var(--muted); background:#fff; }
-  .todo strong { color:var(--text); }
-  .roadmap { position:relative; padding-left:26px; }
-  .roadmap:before { content:""; position:absolute; left:8px; top:6px; bottom:6px; width:2px; background:var(--line); }
-  .step { position:relative; margin-bottom:22px; }
-  .step:before { content:""; position:absolute; left:-24px; top:6px; width:14px; height:14px; border-radius:50%; background:var(--brand); }
-  .step.todo-dot:before { background: var(--soon); }
-  .step h3 { margin:0 0 4px; font-size:19px; }
-  .step p { margin:0; color:var(--muted); }
-  table { width:100%; border-collapse:collapse; background:var(--surface); border-radius:12px; overflow:hidden; border:1px solid var(--line); font-size:15px; }
-  th, td { text-align:left; padding:12px 14px; border-bottom:1px solid var(--line); }
-  th { background:#f1f5f9; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
-  code { background:#f1f5f9; padding:2px 6px; border-radius:6px; font-size:13px; }
-  footer { background:var(--navy); color:#94a3b8; padding:28px 0; font-size:14px; }
-  footer a { color:#cbd5e1; }
-  @media (max-width: 720px) { nav { display:none; } .hero { padding:48px 0; } }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--text); background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  img { max-width: 100%; display: block; }
+  .wrap { width: min(1140px, 92%); margin: 0 auto; }
+  .eyebrow { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--brand); margin-bottom: 12px; }
+  h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0; }
+  h2 { font-size: clamp(28px, 4vw, 40px); margin-bottom: 14px; }
+  .lead { font-size: 18px; color: var(--muted); max-width: 680px; margin: 0 0 40px; }
+  section { padding: 96px 0; }
+  .band { background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+  /* NAV */
+  .nav { position: sticky; top: 0; z-index: 50; background: rgba(10,22,51,.92); backdrop-filter: blur(10px); color: #fff; }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 19px; text-decoration: none; color: #fff; }
+  .logo-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--brand), var(--accent)); display: grid; place-items: center; font-weight: 900; }
+  .nav-links { display: flex; align-items: center; gap: 26px; }
+  .nav-links a { color: #c7d3ea; text-decoration: none; font-size: 15px; font-weight: 600; }
+  .nav-links a:hover { color: #fff; }
+  .nav-cta { background: var(--brand-2); color: #fff !important; padding: 9px 16px; border-radius: 10px; }
+  .theme-btn { background: transparent; border: 1px solid #3a4f7a; color: #c7d3ea; border-radius: 10px; padding: 7px 11px; cursor: pointer; font-size: 14px; }
+
+  /* HERO */
+  .hero { position: relative; color: #fff; background: radial-gradient(1200px 500px at 80% -10%, #2f5fd6 0%, transparent 60%), linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%); overflow: hidden; padding: 110px 0 120px; }
+  .hero:after { content: ""; position: absolute; inset: auto -10% -40% -10%; height: 70%; background: radial-gradient(closest-side, rgba(34,197,94,.18), transparent); pointer-events: none; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; position: relative; z-index: 1; }
+  .hero h1 { font-size: clamp(38px, 6vw, 62px); font-weight: 900; }
+  .hero h1 span { background: linear-gradient(90deg, #7dd3fc, #86efac); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.sub { font-size: 19px; color: #c7d3ea; margin: 22px 0 32px; max-width: 560px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px; border-radius: 12px; font-weight: 800; text-decoration: none; font-size: 16px; border: 0; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff; box-shadow: 0 10px 30px -10px rgba(59,130,246,.8); }
+  .btn-ghost { color: #fff; border: 1px solid #3a4f7a; background: rgba(255,255,255,.04); }
+  .btns { display: flex; flex-wrap: wrap; gap: 14px; }
+  .hero-stats { display: flex; gap: 32px; margin-top: 44px; flex-wrap: wrap; }
+  .hero-stats div { font-size: 13px; color: #9db0d0; }
+  .hero-stats strong { display: block; font-size: 26px; color: #fff; }
+
+  /* Phone mock with live-looking floor */
+  .device { position: relative; background: #0b1020; border: 1px solid #2a3b63; border-radius: 26px; padding: 14px; box-shadow: 0 40px 80px -30px rgba(0,0,0,.6); transform: rotate(-2deg); }
+  .device-top { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 14px; color: #c7d3ea; font-size: 13px; font-weight: 700; }
+  .live { display: inline-flex; align-items: center; gap: 6px; background: rgba(34,197,94,.15); color: #86efac; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+  .live:before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,.7); animation: pulse 1.8s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.7);} 70% { box-shadow: 0 0 0 10px rgba(34,197,94,0);} 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0);} }
+  .lot { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .slot { height: 46px; border-radius: 8px; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #0b1020; }
+  .s-free { background: #86efac; } .s-occ { background: #fca5a5; } .s-res { background: #fde68a; } .s-maint { background: #cbd5e1; }
+  .lot-legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 14px 4px 6px; font-size: 12px; color: #9db0d0; }
+  .lot-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .counter { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .counter div { background: #13203d; border-radius: 12px; padding: 12px; color: #9db0d0; font-size: 12px; }
+  .counter strong { display: block; color: #fff; font-size: 22px; }
+
+  /* PROBLEM / SOLUTION */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .panel { border-radius: var(--radius); padding: 34px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .panel h3 { font-size: 22px; margin-bottom: 16px; }
+  .panel ul { margin: 0; padding: 0; list-style: none; }
+  .panel li { padding: 10px 0 10px 32px; position: relative; color: var(--muted); border-bottom: 1px dashed var(--line); }
+  .panel li:last-child { border: 0; }
+  .panel li:before { position: absolute; left: 0; top: 12px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; }
+  .panel.bad li:before { content: "✕"; background: #fee2e2; color: #b91c1c; }
+  .panel.good li:before { content: "✓"; background: #dcfce7; color: #15803d; }
+  .panel.good { border-color: #bbf7d0; }
+
+  /* FEATURE GRID */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; transition: transform .2s ease, box-shadow .2s ease; }
+  .feature:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+  .icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(59,130,246,.18), rgba(34,197,94,.18)); margin-bottom: 18px; color: var(--brand); }
+  .icon svg { width: 24px; height: 24px; }
+  .feature h3 { font-size: 19px; margin-bottom: 8px; }
+  .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; margin-left: 8px; vertical-align: 2px; }
+  .p-live { background: #dcfce7; color: #166534; } .p-soon { background: #fef3c7; color: #92400e; }
+
+  /* HOW IT WORKS */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; counter-reset: step; }
+  .step { position: relative; padding: 28px 24px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); counter-increment: step; }
+  .step:before { content: counter(step); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--brand-2); color: #fff; font-weight: 900; margin-bottom: 16px; }
+  .step h3 { font-size: 18px; margin-bottom: 8px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* PRODUCT SHOWCASE */
+  .showcase { display: grid; gap: 60px; }
+  .show-row { display: grid; grid-template-columns: 1fr 1.25fr; gap: 48px; align-items: center; }
+  .show-row.flip { grid-template-columns: 1.25fr 1fr; }
+  .show-row.flip .show-text { order: 2; }
+  .show-text h3 { font-size: 28px; margin-bottom: 12px; }
+  .show-text p { color: var(--muted); font-size: 17px; }
+  .show-text ul { padding-left: 20px; color: var(--muted); }
+  .browser { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: #fff; }
+  .browser-bar { display: flex; align-items: center; gap: 7px; padding: 10px 14px; background: #eef2fb; border-bottom: 1px solid var(--line); }
+  .browser-bar i { width: 11px; height: 11px; border-radius: 50%; background: #cbd5e1; display: inline-block; }
+  .browser-bar i:nth-child(1) { background: #fca5a5; } .browser-bar i:nth-child(2) { background: #fde68a; } .browser-bar i:nth-child(3) { background: #86efac; }
+  .browser img { width: 100%; }
+  .caption { font-size: 13px; color: var(--muted); padding: 10px 2px 0; }
+
+  /* BUSINESS */
+  .biz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .tier { border-radius: var(--radius); padding: 30px; background: var(--card); border: 1px solid var(--line); position: relative; }
+  .tier.hot { background: linear-gradient(160deg, var(--navy), var(--navy-2)); color: #fff; border: 0; box-shadow: var(--shadow); }
+  .tier.hot p, .tier.hot li { color: #c7d3ea; }
+  .tier h3 { font-size: 20px; margin-bottom: 6px; }
+  .tier .price { font-size: 30px; font-weight: 900; margin: 10px 0 14px; }
+  .tier .price small { font-size: 14px; font-weight: 600; color: var(--muted); }
+  .tier.hot .price small { color: #9db0d0; }
+  .tier ul { padding-left: 18px; margin: 0; color: var(--muted); font-size: 15px; }
+  .tier li { margin-bottom: 6px; }
+  .badge { position: absolute; top: -12px; right: 22px; background: var(--accent); color: #052e16; font-size: 12px; font-weight: 900; padding: 5px 12px; border-radius: 999px; }
+  .note { margin-top: 22px; font-size: 14px; color: var(--muted); }
+
+  /* ROADMAP */
+  .timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .phase { border-radius: 14px; padding: 22px; background: var(--card); border: 1px solid var(--line); }
+  .phase .tag { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+  .phase h3 { font-size: 17px; margin: 8px 0 8px; }
+  .phase p { margin: 0; font-size: 14px; color: var(--muted); }
+  .phase.done { border-top: 4px solid var(--accent); } .phase.doing { border-top: 4px solid var(--amber); } .phase.plan { border-top: 4px solid #94a3b8; }
+  .phase.done .tag { color: #15803d; } .phase.doing .tag { color: #b45309; } .phase.plan .tag { color: var(--muted); }
+
+  /* FAQ */
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; margin-bottom: 12px; }
+  details summary { cursor: pointer; font-weight: 800; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary:after { content: "+"; font-size: 22px; color: var(--brand); }
+  details[open] summary:after { content: "–"; }
+  details p { color: var(--muted); margin: 12px 0 0; }
+
+  /* CTA */
+  .cta { background: linear-gradient(135deg, var(--brand-2), #0ea5a5); color: #fff; text-align: center; border-radius: 26px; padding: 64px 28px; box-shadow: var(--shadow); }
+  .cta h2 { color: #fff; }
+  .cta p { color: #e0f2fe; font-size: 18px; max-width: 620px; margin: 0 auto 28px; }
+  .btn-white { background: #fff; color: var(--navy); }
+
+  footer { background: var(--navy); color: #9db0d0; padding: 40px 0; font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; }
+  footer a { color: #cbd5e1; }
+
+  /* Reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 960px) {
+    .hero-grid, .split, .show-row, .show-row.flip { grid-template-columns: 1fr; }
+    .show-row.flip .show-text { order: 0; }
+    .features, .biz { grid-template-columns: 1fr 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .timeline { grid-template-columns: 1fr 1fr; }
+    .nav-links a:not(.nav-cta) { display: none; }
+  }
+  @media (max-width: 640px) {
+    section { padding: 70px 0; }
+    .features, .biz, .steps, .timeline { grid-template-columns: 1fr; }
+    .device { transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .reveal { transition: none; opacity: 1; transform: none; } .live:before { animation: none; } }
 </style>
 </head>
 <body>
 
-<header class="top">
+<header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><span class="logo">P</span>ParkEase</a>
-    <nav>
-      <a href="#features">Features</a>
-      <a href="#screens">Screens</a>
-      <a href="#architecture">Architecture</a>
+    <a class="logo" href="#top"><span class="logo-mark">P</span>ParkEase</a>
+    <nav class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#product">Product</a>
+      <a href="#business">Business</a>
       <a href="#roadmap">Roadmap</a>
-      <a href="#status">Status</a>
+      <a href="#faq">FAQ</a>
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">Dark</button>
+      <a class="nav-cta" href="https://park-ease-henna.vercel.app" target="_blank" rel="noopener">Live demo</a>
     </nav>
   </div>
 </header>
 
-<div id="top" class="hero">
-  <div class="wrap">
-    <span class="pill done">Phase 1 done</span><span class="pill done">Phase 2 done</span><span class="pill next">Phase 3 in progress</span><span class="pill plan">Phase 4 and 5 planned</span>
-    <h1>Smart parking, run from one screen.</h1>
-    <p>ParkEase shows which slots are free in real time, records vehicles in and out by number plate, bills automatically, and lets drivers book a slot in advance. Built with MongoDB, Express, React and Node.js.</p>
-    <a class="btn primary" href="#screens">See the screens</a>
-    <a class="btn ghost" href="#roadmap">View the roadmap</a>
+<div class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow" style="color:#7dd3fc">Smart parking platform</span>
+      <h1>Know where to park. <span>Before you arrive.</span></h1>
+      <p class="sub">ParkEase gives parking operators a live view of every slot, records vehicles by number plate, bills automatically, and lets drivers book a time window in advance.</p>
+      <div class="btns">
+        <a class="btn btn-primary" href="https://park-ease-henna.vercel.app" target="_blank" rel="noopener">Try the live app</a>
+        <a class="btn btn-ghost" href="#product">See how it works</a>
+      </div>
+      <div class="hero-stats">
+        <div><strong>Real time</strong>slot status updates</div>
+        <div><strong>0 double bookings</strong>enforced in the database</div>
+        <div><strong>1 platform</strong>for operators and drivers</div>
+      </div>
+    </div>
+
+    <div class="device" aria-label="Live parking floor preview">
+      <div class="device-top"><span>Ground Floor</span><span class="live">Live</span></div>
+      <div class="lot" id="lot"></div>
+      <div class="lot-legend">
+        <span><i style="background:#86efac"></i>Free</span>
+        <span><i style="background:#fca5a5"></i>Occupied</span>
+        <span><i style="background:#fde68a"></i>Reserved</span>
+        <span><i style="background:#cbd5e1"></i>Maintenance</span>
+      </div>
+      <div class="counter" id="counter">
+        <div>Free<strong id="cFree">0</strong></div>
+        <div>Occupied<strong id="cOcc">0</strong></div>
+        <div>Reserved<strong id="cRes">0</strong></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <section id="problem">
   <div class="wrap">
-    <h2>The problem</h2>
-    <p class="lead">Most small and mid-sized parking lots still track cars on paper. Staff don't know what is free, cars get lost, two people can assign the same slot, and billing at exit depends on memory.</p>
-    <div class="grid">
-      <div class="card"><h3>Unknown availability</h3><p>No one knows how many slots are free until they drive in.</p></div>
-      <div class="card"><h3>Double assignment</h3><p>Two staff members can park two cars in the same slot.</p></div>
-      <div class="card"><h3>Manual billing</h3><p>Fees are calculated by hand, which leads to errors and disputes.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="features" class="alt">
-  <div class="wrap">
-    <h2>What it does</h2>
-    <p class="lead">Built in phases. Each phase works on its own and is tagged in Git.</p>
-    <div class="grid">
-      <div class="card">
-        <span class="tag t-done">Phase 1 · Manager panel</span>
-        <h3>Facilities and layouts</h3>
-        <ul><li>Drag-and-drop layout designer (slots, roads, gates, arrows)</li><li>Draft and publish, bulk slot naming, copy from another floor</li><li>Add floors from the designer</li></ul>
+    <span class="eyebrow">The problem</span>
+    <h2>Parking is still run on paper and memory.</h2>
+    <p class="lead">Small and mid-sized parking lots lose money and time every day, and drivers waste time looking for a free slot.</p>
+    <div class="split">
+      <div class="panel bad reveal">
+        <h3>Today</h3>
+        <ul>
+          <li>Nobody knows how many slots are free until a car drives in</li>
+          <li>Two staff members can park two cars in the same slot</li>
+          <li>Fees are calculated by hand, so mistakes and disputes happen</li>
+          <li>Drivers cannot reserve a slot before they travel</li>
+          <li>Owners have no clear record of daily income or occupancy</li>
+        </ul>
       </div>
-      <div class="card">
-        <span class="tag t-done">Phase 1 · Operations</span>
-        <h3>Entry and exit</h3>
-        <ul><li>Number plate read from a photo (Tesseract.js), verified by staff</li><li>Slot claimed atomically: no double parking</li><li>Fee calculated on the server, receipt printed</li></ul>
-      </div>
-      <div class="card">
-        <span class="tag t-done">Phase 1 · Dashboard</span>
-        <h3>Live view</h3>
-        <ul><li>Floor-wise availability and live floor plan</li><li>Updates through Socket.IO, no refresh needed</li><li>Slot status filters, grid and map views</li></ul>
-      </div>
-      <div class="card">
-        <span class="tag t-done">Phase 1 · History and money</span>
-        <h3>History and payments</h3>
-        <ul><li>Filter by vehicle, date, status</li><li>Sort by time, amount, duration, or payment type</li><li>CSV export, payment summary</li></ul>
-      </div>
-      <div class="card">
-        <span class="tag t-done">Phase 2 · Drivers</span>
-        <h3>Driver portal and bookings</h3>
-        <ul><li>Driver sign-up with consent, saved vehicles</li><li>Book a time window; double-booking blocked in the database</li><li>Cancel up to 1 hour before start</li><li>Live public availability page (counts only)</li></ul>
-      </div>
-      <div class="card">
-        <span class="tag t-next">Phase 3 · Payments (demo)</span>
-        <h3>Booking payments</h3>
-        <ul><li>Paid bookings held for 15 minutes until paid</li><li>Demo payment with receipt and refund record</li><li>Razorpay replaces the demo in Phase 3</li></ul>
+      <div class="panel good reveal">
+        <h3>With ParkEase</h3>
+        <ul>
+          <li>A live floor plan shows every slot, updated in real time</li>
+          <li>The database blocks double parking and double booking</li>
+          <li>The server calculates every fee, with a printed receipt</li>
+          <li>Drivers book a time window and pay in advance</li>
+          <li>History, payments and CSV export give a clear daily picture</li>
+        </ul>
       </div>
     </div>
   </div>
 </section>
 
-<section id="screens">
+<section id="features" class="band">
   <div class="wrap">
-    <h2>Screens</h2>
-    <p class="lead">Screenshots from the running app.</p>
-    <div class="shots">
-      <figure>
-        <img src="images/layout-designer.png" alt="Layout designer with slots A01 to A19, an entry gate, and a road" />
-        <figcaption><strong>Layout designer.</strong> Drag slots, roads and gates onto a floor. Save as draft, then publish to create real slots.</figcaption>
-      </figure>
-      <figure>
-        <img src="images/parking-history.png" alt="Parking history table with vehicle, slot, entry, exit, duration, amount, payment and status" />
-        <figcaption><strong>Parking history.</strong> Every entry and exit, with filters, sorting and CSV export.</figcaption>
-      </figure>
-    </div>
-
-    <h3 style="margin-top:36px">Screens still to add</h3>
-    <div class="todo">
-      <p>Take these screenshots from the live app and save them in <code>images/</code> with the names shown. Then add a <code>&lt;figure&gt;</code> for each one.</p>
-      <ul>
-        <li><strong>dashboard.png</strong>: manager dashboard with stats and live floor plan</li>
-        <li><strong>vehicle-entry.png</strong>: plate scan and slot selection</li>
-        <li><strong>vehicle-exit.png</strong>: charges and payment choice</li>
-        <li><strong>payments.png</strong>: payments page after the total fix</li>
-        <li><strong>driver-facilities.png</strong>: driver find-parking list</li>
-        <li><strong>driver-book.png</strong>: booking form with availability</li>
-        <li><strong>driver-bookings.png</strong>: my bookings with pay and cancel</li>
-        <li><strong>availability.png</strong>: public live availability page</li>
-        <li><strong>admin-drivers.png</strong>: admin driver monitoring</li>
-        <li><strong>dark-mode.png</strong>: dashboard in dark mode</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section id="architecture" class="alt">
-  <div class="wrap">
-    <h2>Architecture</h2>
-    <p class="lead">One repository, one API, two front-ends (manager panel and driver portal) served from the same backend.</p>
-    <table>
-      <tr><th>Layer</th><th>Technology</th><th>Where it runs</th></tr>
-      <tr><td>Frontend</td><td>React, Vite, Tailwind, React Konva</td><td>Vercel</td></tr>
-      <tr><td>Backend API</td><td>Node.js, Express, Socket.IO</td><td>Render</td></tr>
-      <tr><td>Database</td><td>MongoDB with Mongoose</td><td>MongoDB Atlas</td></tr>
-      <tr><td>Auth</td><td>JWT, bcryptjs, role checks</td><td>Backend</td></tr>
-      <tr><td>Security</td><td>Helmet, rate limits, input sanitising, password policy, consent</td><td>Backend and Vercel headers</td></tr>
-      <tr><td>Plate reading</td><td>Tesseract.js</td><td>Browser</td></tr>
-    </table>
-  </div>
-</section>
-
-<section id="roadmap">
-  <div class="wrap">
-    <h2>Roadmap</h2>
-    <p class="lead">What is done, what is next, and what comes after.</p>
-    <div class="roadmap">
-      <div class="step"><span class="tag t-done">Done</span><h3>Phase 1: Manager panel</h3><p>Facilities, layout designer, slots, dashboard, entry and exit, fees, history and payments.</p></div>
-      <div class="step"><span class="tag t-done">Done</span><h3>Phase 2: Driver portal, bookings, public page</h3><p>Driver sign-up, vehicles, reservations, double-booking protection, live public availability, admin driver monitoring.</p></div>
-      <div class="step"><span class="tag t-next">In progress</span><h3>Phase 3: Payments</h3><p>Demo payment is built. Next: Razorpay SDK, checkout, signature verification, webhook, real refunds, and an online option at exit.</p></div>
-      <div class="step todo-dot"><span class="tag t-plan">Planned</span><h3>Phase 4: Reports and analytics</h3><p>Daily, weekly and monthly occupancy trends. Revenue split by cash, UPI, card and online. Peak-hour charts and slot-wise use. PDF and Excel export. Filters by facility, floor and date range (Chart.js or Recharts).</p></div>
-      <div class="step todo-dot"><span class="tag t-plan">Planned</span><h3>Phase 5: Testing, hardening, deployment</h3><p>Automated tests for fees, double-booking and auth. Frontend flow tests. Full Content Security Policy and subresource integrity. Cookie-based login. Logs and error monitoring with retention. Accessibility audit. Keep-alive or paid hosting. API documentation.</p></div>
+    <span class="eyebrow">What it does</span>
+    <h2>Everything a parking lot needs, in one place.</h2>
+    <p class="lead">Built for the people who run the lot and for the people who park in it.</p>
+    <div class="features">
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 3v18"/></svg></div>
+        <h3>Visual layout designer</h3>
+        <p>Draw slots, roads, gates and arrows on a floor. Save a draft, then publish to create the real slots. Bulk naming (A01, A02...) included.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18" cy="16" r="3"/></svg></div>
+        <h3>Number plate entry</h3>
+        <p>Capture a plate from a photo or camera. The system reads it in the browser, staff verify it, and the slot is claimed in one safe step.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Automatic billing</h3>
+        <p>Hourly or fixed rates, grace period, and part hours rounded up. The amount is always recalculated on the server, so it cannot be changed from the browser.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Live availability</h3>
+        <p>Every change pushes an update through Socket.IO. Managers see the floor change instantly, and the public page shows free counts without any login.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></div>
+        <h3>Driver bookings <span class="pill p-live">Live</span></h3>
+        <p>Drivers pick a date, start time and duration, save their vehicles, and book a slot. Unpaid bookings hold the slot for 15 minutes, then release it.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3>Secure by design <span class="pill p-live">Live</span></h3>
+        <p>Role-based access, rate-limited login, hashed passwords, consent and account deletion, and privacy-first data retention.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 15l4-4 3 3 5-6"/></svg></div>
+        <h3>Reports <span class="pill p-soon">Next</span></h3>
+        <p>Occupancy trends, revenue by payment method, peak hours, and PDF or Excel exports for any date range.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 10h20M6 15h4"/></svg></div>
+        <h3>Online payments <span class="pill p-soon">Next</span></h3>
+        <p>Razorpay checkout, verified webhooks, and real refunds for cancelled bookings. A demo payment flow is already working.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <h3>Works in any browser</h3>
+        <p>A responsive web app that runs on phones, tablets and desktops. No app store install needed for drivers or staff.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<section id="status" class="alt">
+<section id="how">
   <div class="wrap">
-    <h2>Status</h2>
-    <p class="lead">Current state of the project.</p>
-    <table>
-      <tr><th>Area</th><th>Status</th></tr>
-      <tr><td>Manager panel</td><td>Live</td></tr>
-      <tr><td>Driver portal and bookings</td><td>Live</td></tr>
-      <tr><td>Public availability page</td><td>Live</td></tr>
-      <tr><td>Demo payments</td><td>Built, testing</td></tr>
-      <tr><td>Razorpay</td><td>Not started (needs account and keys)</td></tr>
-      <tr><td>Reports</td><td>Not started</td></tr>
-      <tr><td>Legal pages (privacy, terms, refunds)</td><td>Draft, needs lawyer review</td></tr>
-    </table>
+    <span class="eyebrow">How it works</span>
+    <h2>From setup to first booking in four steps.</h2>
+    <p class="lead">The operator sets the lot up once. After that, the system runs the daily work.</p>
+    <div class="steps">
+      <div class="step reveal"><h3>Set up the facility</h3><p>Add the lot, its floors, opening hours and pricing rule.</p></div>
+      <div class="step reveal"><h3>Draw the layout</h3><p>Place slots, roads and gates on the canvas. Publish to create live slots.</p></div>
+      <div class="step reveal"><h3>Park and bill</h3><p>Staff record entry by plate. On exit the server bills the stay and prints a receipt.</p></div>
+      <div class="step reveal"><h3>Drivers book ahead</h3><p>Drivers reserve a slot for a time window, pay, and arrive to a ready space.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="product" class="band">
+  <div class="wrap">
+    <span class="eyebrow">Product</span>
+    <h2>Built screens, not mockups.</h2>
+    <p class="lead">These are screenshots from the running application.</p>
+    <div class="showcase">
+      <div class="show-row reveal">
+        <div class="show-text">
+          <h3>Design your lot once</h3>
+          <p>The layout designer turns a floor plan into live parking. Drag, resize and rotate elements, name slots in bulk, copy a layout from another floor, and publish when it is ready.</p>
+          <ul><li>Draft and publish, so live slots never change by accident</li><li>Add floors directly from the designer</li></ul>
+        </div>
+        <figure class="browser" style="margin:0">
+          <div class="browser-bar"><i></i><i></i><i></i></div>
+          <img src="images/layout-designer.png" alt="Layout designer showing numbered parking slots, a road and an entry gate" loading="lazy" />
+        </figure>
+      </div>
+
+      <div class="show-row flip reveal">
+        <div class="show-text">
+          <h3>Every vehicle, every rupee, on record</h3>
+          <p>Search by plate, filter by date and status, and sort by time, amount, duration or payment type. Export the same view to CSV for accounts.</p>
+          <ul><li>Totals and payment mix in one place</li><li>Clean CSV for accounting</li></ul>
+        </div>
+        <figure class="browser" style="margin:0">
+          <div class="browser-bar"><i></i><i></i><i></i></div>
+          <img src="images/parking-history.png" alt="Parking history table with plate numbers, slots, entry and exit times, amounts and status" loading="lazy" />
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="business">
+  <div class="wrap">
+    <span class="eyebrow">Business model</span>
+    <h2>Simple pricing that grows with the lot.</h2>
+    <p class="lead">A proposal for how ParkEase can earn. Final prices will be set after pilot feedback.</p>
+    <div class="biz">
+      <div class="tier reveal">
+        <h3>Operator (SaaS)</h3>
+        <div class="price">Monthly per facility <small>(to be set)</small></div>
+        <ul><li>Layout designer, entry and exit, dashboard</li><li>History, payments and reports</li><li>Support and updates</li></ul>
+      </div>
+      <div class="tier hot reveal">
+        <span class="badge">Recommended</span>
+        <h3>Booking fee</h3>
+        <div class="price">Per booking <small>(to be set)</small></div>
+        <ul><li>Small fee on every paid driver booking</li><li>Charged through the payment gateway</li><li>Refunds follow the cancellation policy</li></ul>
+      </div>
+      <div class="tier reveal">
+        <h3>Enterprise</h3>
+        <div class="price">Custom</div>
+        <ul><li>Several facilities and city-wide views</li><li>Custom integrations and branding</li><li>Dedicated onboarding</li></ul>
+      </div>
+    </div>
+    <p class="note">Operators keep their own parking charges. ParkEase earns from the platform, not from the lot's revenue.</p>
+  </div>
+</section>
+
+<section id="roadmap" class="band">
+  <div class="wrap">
+    <span class="eyebrow">Roadmap</span>
+    <h2>What is built, and what comes next.</h2>
+    <p class="lead">Built in phases, with a saved version at the end of each.</p>
+    <div class="timeline">
+      <div class="phase done reveal"><div class="tag">Done</div><h3>Phase 1</h3><p>Manager panel: layouts, entry and exit, billing, history, payments.</p></div>
+      <div class="phase done reveal"><div class="tag">Done</div><h3>Phase 2</h3><p>Driver portal, bookings, live public availability, admin monitoring.</p></div>
+      <div class="phase doing reveal"><div class="tag">In progress</div><h3>Phase 3</h3><p>Demo payments are built. Razorpay checkout, webhooks and refunds next.</p></div>
+      <div class="phase plan reveal"><div class="tag">Planned</div><h3>Phase 4</h3><p>Reports and analytics, with PDF and Excel export.</p></div>
+      <div class="phase plan reveal"><div class="tag">Planned</div><h3>Phase 5</h3><p>Automated tests, stronger security, monitoring, and production hosting.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="wrap">
+    <span class="eyebrow">Under the hood</span>
+    <h2>Built on a modern, proven stack.</h2>
+    <p class="lead">Every part is open, standard and easy to extend.</p>
+    <div class="features">
+      <div class="feature reveal"><h3>React + Vite</h3><p>Fast, responsive interface with React Konva for the floor designer.</p></div>
+      <div class="feature reveal"><h3>Node.js + Express</h3><p>REST API with role checks, validation, and rate limits.</p></div>
+      <div class="feature reveal"><h3>MongoDB Atlas</h3><p>Cloud database. Slot claims and double-booking rules are enforced in the database.</p></div>
+      <div class="feature reveal"><h3>Socket.IO</h3><p>Live updates for staff and for the public availability page.</p></div>
+      <div class="feature reveal"><h3>Tesseract.js</h3><p>Number plate reading that runs in the browser, so plates are not sent to a third party.</p></div>
+      <div class="feature reveal"><h3>Vercel + Render</h3><p>Hosted with automatic deploys from Git. Easy to scale when traffic grows.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" class="band">
+  <div class="wrap">
+    <span class="eyebrow">FAQ</span>
+    <h2>Questions people ask.</h2>
+    <p class="lead" style="margin-bottom:28px"></p>
+    <details>
+      <summary>Does a driver need to install an app?</summary>
+      <p>No. The driver portal runs in any modern mobile browser. Drivers sign up with an email and password.</p>
+    </details>
+    <details>
+      <summary>What stops two cars from taking the same slot?</summary>
+      <p>The slot is claimed in a single database operation that succeeds only if the slot is still free. Bookings use a 30-minute lock per slot, enforced by a unique database index, so two bookings cannot overlap.</p>
+    </details>
+    <details>
+      <summary>Is the amount on the receipt trustworthy?</summary>
+      <p>Yes. The fee is calculated on the server from the lot's rate rules. The browser only displays it.</p>
+    </details>
+    <details>
+      <summary>What happens if a driver does not pay for a booking?</summary>
+      <p>The slot is held for 15 minutes. If payment is not completed in that time, the slot is released automatically.</p>
+    </details>
+    <details>
+      <summary>How is personal data handled?</summary>
+      <p>Drivers accept a privacy policy at sign-up. They can download their data and delete their account. Old parking records have owner details removed after the retention period.</p>
+    </details>
+    <details>
+      <summary>Can a lot run without internet?</summary>
+      <p>Not today. The system is cloud-based, so an internet connection is needed. Offline mode is not planned for the current phases.</p>
+    </details>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta reveal">
+      <h2>See it running.</h2>
+      <p>Open the live app, sign up as a driver, and watch the public availability page update as bookings change.</p>
+      <div class="btns" style="justify-content:center">
+        <a class="btn btn-white" href="https://park-ease-henna.vercel.app" target="_blank" rel="noopener">Open the live app</a>
+        <a class="btn btn-ghost" href="mailto:[your-email]">Contact us</a>
+      </div>
+    </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    ParkEase · Built by Padmanshu Pare · <a href="https://github.com/padmanshu-pare/ParkEase">Source on GitHub</a> · <a href="https://park-ease-henna.vercel.app">Live app</a>
+    <span>ParkEase · Smart parking, managed in real time</span>
+    <span><a href="https://github.com/padmanshu-pare/ParkEase" target="_blank" rel="noopener">Source code</a> · <a href="https://park-ease-henna.vercel.app/privacy">Privacy</a> · <a href="https://park-ease-henna.vercel.app/terms">Terms</a></span>
   </div>
 </footer>
 
+<script>
+  // Live floor preview: a demo animation, not real data
+  const states = ['free','free','occ','free','res','free','free','occ','free','free','res','free','free','free','occ','maint','free','free'];
+  const cls = { free: 's-free', occ: 's-occ', res: 's-res', maint: 's-maint' };
+  const names = ['A01','A02','A03','A04','A05','A06','B01','B02','B03','B04','B05','B06','C01','C02','C03','C04','C05','C06'];
+  const lot = document.getElementById('lot');
+  let cells = states.map((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'slot ' + cls[s];
+    d.textContent = names[i];
+    lot.appendChild(d);
+    return { el: d, s };
+  });
+  function tally() {
+    const c = { free: 0, occ: 0, res: 0 };
+    cells.forEach(x => { if (c[x.s] !== undefined) c[x.s]++; });
+    document.getElementById('cFree').textContent = c.free;
+    document.getElementById('cOcc').textContent = c.occ;
+    document.getElementById('cRes').textContent = c.res;
+  }
+  tally();
+  setInterval(() => {
+    const i = Math.floor(Math.random() * cells.length);
+    const cur = cells[i];
+    if (cur.s === 'maint') return;
+    cur.s = cur.s === 'free' ? (Math.random() < .6 ? 'occ' : 'res') : 'free';
+    cur.el.className = 'slot ' + cls[cur.s];
+    tally();
+  }, 1800);
+
+  // Dark mode toggle, remembered on this device
+  const root = document.documentElement;
+  const btn = document.getElementById('themeBtn');
+  const saved = localStorage.getItem('pe-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  const label = () => btn.textContent = root.getAttribute('data-theme') === 'dark' ? 'Light' : 'Dark';
+  label();
+  btn.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('pe-theme', next);
+    label();
+  });
+
+  // Reveal sections on scroll
+  const io = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
 </body>
 </html>
