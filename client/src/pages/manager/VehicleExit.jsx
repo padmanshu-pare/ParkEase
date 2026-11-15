@@ -5,6 +5,7 @@ import api, { errMsg } from '../../services/api';
 import { useFacility } from '../../context/FacilityContext';
 import useLiveAvailability from '../../hooks/useLiveAvailability';
 import PlateScanner from '../../components/vehicles/PlateScanner';
+import LiveCameraScanner from '../../components/vehicles/LiveCameraScanner';
 import Receipt from '../../components/vehicles/Receipt';
 import { PageHeader, Field, NoFacility, Empty } from '../../components/common/ui';
 import { normalizeReg, fmtDateTime, fmtDuration, money } from '../../utils/format';
@@ -62,6 +63,7 @@ export default function VehicleExit() {
         <div className="space-y-6 xl:col-span-1">
           <form onSubmit={lookup} className="card space-y-4 p-5">
             <PlateScanner onDetected={(p) => { setReg(p); lookup(null, p); }} />
+            <LiveCameraScanner onDetected={(p) => { setReg(p); lookup(null, p); }} />
             <Field label="Vehicle number">
               <input className="input font-mono text-base font-bold uppercase tracking-wider" value={reg} onChange={(e) => setReg(e.target.value.toUpperCase())} placeholder="MP17AB1234" />
             </Field>

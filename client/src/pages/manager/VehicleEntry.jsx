@@ -6,6 +6,7 @@ import api, { errMsg } from '../../services/api';
 import { useFacility } from '../../context/FacilityContext';
 import useLiveAvailability from '../../hooks/useLiveAvailability';
 import PlateScanner from '../../components/vehicles/PlateScanner';
+import LiveCameraScanner from '../../components/vehicles/LiveCameraScanner';
 import FloorMap from '../../components/parking/FloorMap';
 import { PageHeader, Field, NoFacility } from '../../components/common/ui';
 import { normalizeReg, fmtDateTime } from '../../utils/format';
@@ -108,6 +109,7 @@ export default function VehicleEntry() {
       <form onSubmit={submit} className="grid gap-6 xl:grid-cols-3">
         <div className="card space-y-4 p-5 xl:col-span-1">
           <PlateScanner onDetected={(p) => setForm((f) => ({ ...f, regNumber: p }))} />
+          <LiveCameraScanner onDetected={(p) => setForm((f) => ({ ...f, regNumber: p }))} />
           <Field label="Vehicle number" hint="Check the detected number and correct it if needed.">
             <input className="input font-mono text-base font-bold uppercase tracking-wider" required value={form.regNumber} onChange={(e) => setForm({ ...form, regNumber: e.target.value.toUpperCase() })} placeholder="MP17AB1234" />
           </Field>
