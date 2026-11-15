@@ -1,4 +1,5 @@
 import { normalizeReg } from './format';
+import { STATE_CODES } from './indianPlate';
 
 // Indian plates: 2 state letters, 1-2 district digits, 1-3 series letters, 4 digits. e.g. MP17AB1234
 const PLATE_RE = /^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}$/;
@@ -15,6 +16,9 @@ const canBeLetter = (c) => isLetter(c) || AS_LETTER[c] !== undefined;
 export function correctPlate(raw) {
   const s = normalizeReg(raw || '');
   if (s.length < 9 || s.length > 11) return '';
+  // BH series: YY BH NNNN LL. Fix the year digits and the B/H before checking.
+  const bh = s.replace(/^([0-9OIZSGB]{2})([B8])([H])/, (_, y, b, h) => `${y.split('').map((ch) => AS_DIGIT[ch] || ch).join('')}BH`);
+  if (/^\d{2}BH\d{4}[A-Z]{1,2}$/.test(bh)) return bh;
   const c = s.split('');
   // State code: letters
   for (let i = 0; i < 2; i++) {
@@ -38,6 +42,8 @@ export function correctPlate(raw) {
       ...letters.map((ch) => (isLetter(ch) ? ch : AS_LETTER[ch])),
     ];
     const plate = [c[0], c[1], ...fixed, ...c.slice(c.length - 4)].join('');
+    // Reject plates whose state code does not exist (a common sign of a misread)
+    if (!STATE_CODES[plate.slice(0, 2)]) return '';
     return PLATE_RE.test(plate) ? plate : '';
   }
   return '';

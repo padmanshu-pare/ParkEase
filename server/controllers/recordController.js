@@ -22,6 +22,8 @@ exports.entry = asyncHandler(async (req, res) => {
   // Free-text limits: keeps stored data small and blocks oversized input
   const ownerName = typeof req.body.ownerName === 'string' ? req.body.ownerName.trim().slice(0, 80) : undefined;
   const ownerPhone = typeof req.body.ownerPhone === 'string' ? req.body.ownerPhone.trim().slice(0, 15) : undefined;
+  const PLATE_TYPES = ['private', 'commercial', 'ev', 'ev_commercial', 'rental', 'temporary', 'diplomatic', 'government', 'military'];
+  const plateCategory = PLATE_TYPES.includes(req.body.plateCategory) ? req.body.plateCategory : 'private';
   const regNumber = normalizeReg(req.body.regNumber);
   if (!isValidReg(regNumber)) throw httpError(400, 'Enter a valid vehicle number (letters and digits only, 5 to 12 characters)');
   if (!mongoose.isValidObjectId(slotId)) throw httpError(400, 'Select a parking slot');
@@ -74,6 +76,7 @@ exports.entry = asyncHandler(async (req, res) => {
       regNumber,
       ownerName,
       ownerPhone,
+      plateCategory,
       reservation: reservation ? reservation._id : undefined,
       enteredBy: req.user._id,
     });
