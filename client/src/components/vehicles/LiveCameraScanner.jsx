@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { Video, VideoOff, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createPlateReader } from '../../utils/plateOcr';
+import { createPlateReader, sharpnessOf } from '../../utils/plateOcr';
 
-const AUTO_EVERY_MS = 2500;
+const AUTO_EVERY_MS = 2000;
+const BLUR_MIN = 40;      // frames sharper than this are read; tune per camera if needed
+const CONFIRM_COUNT = 2;  // in auto mode, the same plate must come from 2 separate frames
 
 // Live camera feed for entry and exit. Works with a laptop or phone camera, or a USB webcam.
-// Plates are read in the browser; staff still verify the number before confirming.
+// Blurry frames are skipped, and auto mode waits for the same plate in two frames before accepting it.
 export default function LiveCameraScanner({ onDetected }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const readerRef = useRef(null);
   const busyRef = useRef(false);
+  const votesRef = useRef([]);
   const [open, setOpen] = useState(false);
   const [devices, setDevices] = useState([]);
   const [deviceId, setDeviceId] = useState('');
@@ -28,6 +31,7 @@ export default function LiveCameraScanner({ onDetected }) {
 
   const startCamera = async (id) => {
     stopCamera();
+    votesRef.current = [];
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('This browser cannot open a camera. Open the app over HTTPS, or upload a photo.');
       return;
@@ -35,7 +39,7 @@ export default function LiveCameraScanner({ onDetected }) {
     try {
       const video = id
         ? { deviceId: { exact: id } }
-        : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } };
+        : { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } };
       const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video });
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
@@ -43,7 +47,7 @@ export default function LiveCameraScanner({ onDetected }) {
       const list = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
       setDevices(list);
       setDeviceId(stream.getVideoTracks()[0]?.getSettings().deviceId || id || '');
-      setStatus('Hold the number plate inside the frame.');
+      setStatus('Hold the number plate inside the frame. Keep it straight and well lit.');
     } catch (err) {
       const msg =
         err.name === 'NotAllowedError' ? 'Camera permission was denied. Allow camera access in the browser settings.' :
@@ -55,7 +59,6 @@ export default function LiveCameraScanner({ onDetected }) {
     }
   };
 
-  // Start the camera when the panel opens; stop it when the panel closes or the page unmounts
   useEffect(() => {
     if (!open) return undefined;
     startCamera('');
@@ -69,7 +72,13 @@ export default function LiveCameraScanner({ onDetected }) {
 
   const close = () => setOpen(false);
 
-  // Grab the current frame and read it. Returns true when a plate was found.
+  const accept = (plate) => {
+    toast.success(`Detected ${plate}. Please verify it.`);
+    onDetected(plate);
+    setOpen(false);
+  };
+
+  // Grab the current frame and read it. Returns true when a plate is accepted.
   const readFrame = async (manual) => {
     const v = videoRef.current;
     if (busyRef.current || !v || !streamRef.current || !v.videoWidth) return false;
@@ -77,18 +86,33 @@ export default function LiveCameraScanner({ onDetected }) {
     c.width = v.videoWidth;
     c.height = v.videoHeight;
     c.getContext('2d').drawImage(v, 0, 0);
+
+    if (!manual && sharpnessOf(c) < BLUR_MIN) {
+      setStatus('Image is blurry. Hold the camera still.');
+      return false;
+    }
+
     busyRef.current = true;
     setReading(true);
     try {
       if (!readerRef.current) readerRef.current = await createPlateReader();
-      const plate = await readerRef.current.read(c);
-      if (plate) {
-        toast.success(`Detected ${plate}. Please verify it.`);
-        onDetected(plate);
-        setOpen(false);
+      const result = await readerRef.current.read(c);
+      if (!result) {
+        if (manual) toast.error('Could not read the plate. Move closer, improve the light, and try again.');
+        else setStatus('Looking for the number plate...');
+        return false;
+      }
+      if (manual) {
+        accept(result.plate);
         return true;
       }
-      if (manual) toast.error('Could not read the plate. Hold it steady, closer to the camera, and try again.');
+      votesRef.current = [...votesRef.current, result.plate].slice(-6);
+      const count = votesRef.current.filter((p) => p === result.plate).length;
+      if (count >= CONFIRM_COUNT) {
+        accept(result.plate);
+        return true;
+      }
+      setStatus(`Reading ${result.plate}. Confirming...`);
       return false;
     } catch {
       if (manual) toast.error('Reading failed. Try again.');
@@ -99,7 +123,6 @@ export default function LiveCameraScanner({ onDetected }) {
     }
   };
 
-  // Auto mode: keep trying every few seconds until a plate is read
   useEffect(() => {
     if (!open || !auto) return undefined;
     const t = setInterval(() => readFrame(false), AUTO_EVERY_MS);
