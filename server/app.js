@@ -34,6 +34,7 @@ app.use('/api/facilities', require('./routes/facilityRoutes'));
 app.use('/api/layouts', require('./routes/layoutRoutes'));
 app.use('/api/slots', require('./routes/slotRoutes'));
 app.use('/api/records', require('./routes/recordRoutes'));
+app.use('/api/plates', require('./routes/plateRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/pricing', require('./routes/pricingRoutes'));

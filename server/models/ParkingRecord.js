@@ -10,7 +10,6 @@ const recordSchema = new Schema(
     regNumber: { type: String, required: true, uppercase: true, index: true },
     ownerName: String,
     ownerPhone: String,
-    plateCategory: { type: String, default: 'private', enum: ['private', 'commercial', 'ev', 'ev_commercial', 'rental', 'temporary', 'diplomatic', 'government', 'military'] },
     reservation: { type: Schema.Types.ObjectId, ref: 'Reservation' },
     entryTime: { type: Date, default: Date.now, index: true },
     exitTime: Date,

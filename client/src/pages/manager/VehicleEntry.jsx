@@ -9,11 +9,10 @@ import PlateScanner from '../../components/vehicles/PlateScanner';
 import LiveCameraScanner from '../../components/vehicles/LiveCameraScanner';
 import FloorMap from '../../components/parking/FloorMap';
 import { PageHeader, Field, NoFacility } from '../../components/common/ui';
-import PlateChip from '../../components/common/PlateChip';
-import { analyzePlate, PLATE_CATEGORIES } from '../../utils/indianPlate';
+import { analyzePlate } from '../../utils/indianPlate';
 import { normalizeReg, fmtDateTime } from '../../utils/format';
 
-const EMPTY = { regNumber: '', ownerName: '', ownerPhone: '', plateCategory: 'private' };
+const EMPTY = { regNumber: '', ownerName: '', ownerPhone: '' };
 
 export default function VehicleEntry() {
   const { selected, selectedId, reload } = useFacility();
@@ -119,18 +118,12 @@ export default function VehicleEntry() {
             const info = analyzePlate(reg);
             return info.valid ? (
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                <PlateChip reg={reg} category={form.plateCategory} />
                 <span className="text-slate-500">{info.format === 'bh' ? 'BH series (inter-state)' : `${info.stateName}`}</span>
               </div>
             ) : (
               <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">{info.reason}</p>
             );
           })()}
-          <Field label="Plate type" hint="Pick the colour of the plate. It helps the record and reports.">
-            <select className="input" value={form.plateCategory} onChange={(e) => setForm({ ...form, plateCategory: e.target.value })}>
-              {PLATE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </Field>
           <Field label="Owner name (optional)"><input className="input" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} /></Field>
           <Field label="Contact number (optional)"><input className="input" inputMode="tel" value={form.ownerPhone} onChange={(e) => setForm({ ...form, ownerPhone: e.target.value })} /></Field>
 

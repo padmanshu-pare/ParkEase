@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Video, VideoOff, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createPlateReader, sharpnessOf } from '../../utils/plateOcr';
+import { readPlate, releasePlateReader, sharpnessOf } from '../../utils/plateOcr';
 
 const AUTO_EVERY_MS = 2000;
 const BLUR_MIN = 40;      // frames sharper than this are read; tune per camera if needed
 const CONFIRM_COUNT = 2;  // in auto mode, the same plate must come from 2 separate frames
 
-// Live camera feed for entry and exit. Works with a laptop or phone camera, or a USB webcam.
-// Blurry frames are skipped, and auto mode waits for the same plate in two frames before accepting it.
+// Live camera feed for entry and exit. Blurry frames are skipped, and auto mode waits
+// for the same plate in two frames before accepting it.
 export default function LiveCameraScanner({ onDetected }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
-  const readerRef = useRef(null);
   const busyRef = useRef(false);
   const votesRef = useRef([]);
   const [open, setOpen] = useState(false);
@@ -64,13 +63,10 @@ export default function LiveCameraScanner({ onDetected }) {
     startCamera('');
     return () => {
       stopCamera();
-      readerRef.current?.close();
-      readerRef.current = null;
+      releasePlateReader();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-
-  const close = () => setOpen(false);
 
   const accept = (plate) => {
     toast.success(`Detected ${plate}. Please verify it.`);
@@ -95,8 +91,7 @@ export default function LiveCameraScanner({ onDetected }) {
     busyRef.current = true;
     setReading(true);
     try {
-      if (!readerRef.current) readerRef.current = await createPlateReader();
-      const result = await readerRef.current.read(c);
+      const result = await readPlate(c);
       if (!result) {
         if (manual) toast.error('Could not read the plate. Move closer, improve the light, and try again.');
         else setStatus('Looking for the number plate...');
@@ -114,8 +109,9 @@ export default function LiveCameraScanner({ onDetected }) {
       }
       setStatus(`Reading ${result.plate}. Confirming...`);
       return false;
-    } catch {
-      if (manual) toast.error('Reading failed. Try again.');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Reading failed. Try again.';
+      if (manual) toast.error(msg);
       return false;
     } finally {
       busyRef.current = false;
@@ -163,7 +159,7 @@ export default function LiveCameraScanner({ onDetected }) {
           <label className="flex items-center gap-2 text-sm text-slate-200">
             <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />Auto read
           </label>
-          <button type="button" className="btn-ghost btn-sm ml-auto text-slate-200" onClick={close}>
+          <button type="button" className="btn-ghost btn-sm ml-auto text-slate-200" onClick={() => setOpen(false)}>
             <VideoOff className="h-4 w-4" />Close camera
           </button>
         </div>

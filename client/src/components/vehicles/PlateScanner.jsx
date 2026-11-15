@@ -1,21 +1,11 @@
 import { useRef, useState } from 'react';
 import { Camera, Loader2, ScanLine } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { normalizeReg } from '../../utils/format';
+import { readPlateFromFile } from '../../utils/plateOcr';
 
 const MAX_MB = 6;
-// Indian-style plate, e.g. MP17AB1234 / DL1CAB1234. Falls back to the longest alphanumeric token.
-const PLATE_RE = /[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{3,4}/;
 
-function pickPlate(raw) {
-  const cleaned = normalizeReg(raw);
-  const m = cleaned.match(PLATE_RE);
-  if (m) return m[0];
-  const tokens = raw.toUpperCase().split(/\s+/).map(normalizeReg).filter((t) => t.length >= 5);
-  return tokens.sort((a, b) => b.length - a.length)[0] || cleaned.slice(0, 12);
-}
-
-// Takes a photo / uploads an image, runs Tesseract OCR in the browser and returns the plate text.
+// Photo or camera-app capture. Reads the number plate and fills the form.
 export default function PlateScanner({ onDetected }) {
   const input = useRef(null);
   const [preview, setPreview] = useState('');
@@ -31,16 +21,15 @@ export default function PlateScanner({ onDetected }) {
     setPreview(URL.createObjectURL(file));
     setBusy(true);
     try {
-      const { createWorker } = await import('tesseract.js'); // loaded only when needed
-      const worker = await createWorker('eng');
-      await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ', tessedit_pageseg_mode: '7' });
-      const { data } = await worker.recognize(file);
-      await worker.terminate();
-      const plate = pickPlate(data.text || '');
-      if (plate.length >= 5) { onDetected(plate); toast.success(`Detected ${plate}. Please verify it.`); }
-      else toast.error('Could not read the number plate. Type it in manually.');
+      const plate = await readPlateFromFile(file);
+      if (plate) {
+        onDetected(plate);
+        toast.success(`Detected ${plate}. Please verify it.`);
+      } else {
+        toast.error('Could not read the number plate. Type it in manually.');
+      }
     } catch {
-      toast.error('OCR failed. Type the number plate manually.');
+      toast.error('Reading failed. Type the number plate manually.');
     } finally {
       setBusy(false);
     }
