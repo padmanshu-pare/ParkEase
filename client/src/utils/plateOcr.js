@@ -135,6 +135,27 @@ export function sharpnessOf(source) {
   return sumSq / n - mean * mean;
 }
 
+// Rotates a canvas (plates can be tilted, or printed vertically on some vehicles)
+function rotate(src, deg) {
+  const rad = (deg * Math.PI) / 180;
+  const w = src.width;
+  const h = src.height;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  const W = Math.ceil(w * cos + h * sin);
+  const H = Math.ceil(w * sin + h * cos);
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate(rad);
+  ctx.drawImage(src, -w / 2, -h / 2);
+  return c;
+}
+
 // Browser reader (Tesseract). Loaded only when needed.
 async function createBrowserReader() {
   const { createWorker } = await import('tesseract.js');
@@ -147,17 +168,34 @@ async function createBrowserReader() {
     async read(source, crop) {
       let best = null;
       let lastText = '';
-      for (const psm of ['7', '11']) {
-        await worker.setParameters({ tessedit_pageseg_mode: psm });
-        for (const mode of ['thresh', 'adaptive', 'large']) {
-          const { data } = await worker.recognize(preprocess(source, mode, crop));
+      const done = () => (best ? { ...best, text: lastText } : null);
+
+      // Runs OCR on one image with the given page modes. Returns true when a confident plate is found.
+      const tryCanvas = async (canvas, psms) => {
+        for (const psm of psms) {
+          await worker.setParameters({ tessedit_pageseg_mode: psm });
+          const { data } = await worker.recognize(canvas);
           lastText = (data.text || '').trim() || lastText;
           const hit = findPlate(data.text || '', data.confidence);
           if (hit && (!best || hit.conf > best.conf)) best = hit;
-          if (best && best.conf >= 70) return { ...best, text: lastText };
+          if (best && best.conf >= 70) return true;
+        }
+        return false;
+      };
+
+      // 1. Upright plate: single line (7), block (6, two-line plates), sparse (11)
+      for (const mode of ['thresh', 'adaptive', 'large']) {
+        if (await tryCanvas(preprocess(source, mode, crop), ['7', '6', '11'])) return done();
+      }
+      // 2. Tilted or vertical plate: try a few rotations
+      if (!best) {
+        for (const deg of [90, 270, -15, 15, -30, 30]) {
+          for (const mode of ['thresh', 'adaptive']) {
+            if (await tryCanvas(rotate(preprocess(source, mode, crop), deg), ['6', '11'])) return done();
+          }
         }
       }
-      return best ? { ...best, text: lastText } : { plate: '', conf: 0, text: lastText };
+      return done() || { plate: '', conf: 0, text: lastText };
     },
     async close() {
       await worker.terminate();
