@@ -49,6 +49,18 @@ export function correctPlate(raw) {
   return '';
 }
 
+// Finds a valid plate anywhere inside OCR text. Spaces and stray words around the plate are ignored.
+export function findPlate(text, conf = 0) {
+  const clean = String(text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for (const len of [10, 9, 11]) {
+    for (let i = 0; i + len <= clean.length; i++) {
+      const plate = correctPlate(clean.slice(i, i + len));
+      if (plate) return { plate, conf };
+    }
+  }
+  return null;
+}
+
 // Crops to the centre of the frame, where the plate is expected
 function cropCentre(source) {
   const w = source.width;
@@ -134,12 +146,18 @@ async function createBrowserReader() {
   return {
     async read(source, crop) {
       let best = null;
-      for (const mode of ['thresh', 'adaptive', 'large']) {
-        const { data } = await worker.recognize(preprocess(source, mode, crop));
-        const plate = correctPlate(data.text || '');
-        if (plate && (!best || data.confidence > best.conf)) best = { plate, conf: data.confidence };
+      let lastText = '';
+      for (const psm of ['7', '11']) {
+        await worker.setParameters({ tessedit_pageseg_mode: psm });
+        for (const mode of ['thresh', 'adaptive', 'large']) {
+          const { data } = await worker.recognize(preprocess(source, mode, crop));
+          lastText = (data.text || '').trim() || lastText;
+          const hit = findPlate(data.text || '', data.confidence);
+          if (hit && (!best || hit.conf > best.conf)) best = hit;
+          if (best && best.conf >= 70) return { ...best, text: lastText };
+        }
       }
-      return best;
+      return best ? { ...best, text: lastText } : { plate: '', conf: 0, text: lastText };
     },
     async close() {
       await worker.terminate();
@@ -175,7 +193,7 @@ export async function readPlate(canvas, { crop = true } = {}) {
       const image = await canvasToBase64(canvas, crop);
       const { data } = await api.post('/plates/read', { image });
       serverEnabled = true;
-      return data.plate ? { plate: data.plate, conf: data.confidence || 0 } : null;
+      return { plate: data.plate || '', conf: data.confidence || 0, text: data.plate || '' };
     } catch (err) {
       if (err.response?.status !== 501) throw err; // real error: show it to the user
       serverEnabled = false; // not configured on the server: use the browser reader from now on
@@ -205,7 +223,7 @@ export async function readPlateFromFile(file) {
     canvas.height = img.naturalHeight;
     canvas.getContext('2d').drawImage(img, 0, 0);
     const result = await readPlate(canvas, { crop: false });
-    return result ? result.plate : '';
+    return result.plate || '';
   } finally {
     URL.revokeObjectURL(url);
   }

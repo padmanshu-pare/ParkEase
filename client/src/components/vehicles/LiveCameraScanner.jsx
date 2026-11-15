@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { readPlate, releasePlateReader, sharpnessOf } from '../../utils/plateOcr';
 
 const AUTO_EVERY_MS = 2000;
-const BLUR_MIN = 40;      // frames sharper than this are read; tune per camera if needed
+const BLUR_MIN = 15;      // frames sharper than this are read; lower it if a sharp camera is skipped
 const CONFIRM_COUNT = 2;  // in auto mode, the same plate must come from 2 separate frames
 
 // Live camera feed for entry and exit. Blurry frames are skipped, and auto mode waits
@@ -92,9 +92,10 @@ export default function LiveCameraScanner({ onDetected }) {
     setReading(true);
     try {
       const result = await readPlate(c);
-      if (!result) {
-        if (manual) toast.error('Could not read the plate. Move closer, improve the light, and try again.');
-        else setStatus('Looking for the number plate...');
+      if (!result.plate) {
+        const seen = result.text ? ` OCR saw: "${result.text.slice(0, 40)}".` : '';
+        if (manual) toast.error(`No plate found.${seen} Move closer, improve the light, and try again.`);
+        else setStatus(`No plate yet.${seen}`);
         return false;
       }
       if (manual) {
