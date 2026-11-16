@@ -19,6 +19,7 @@ export default function VehicleEntry() {
   const [floors, setFloors] = useState([]);
   const [floorId, setFloorId] = useState('');
   const [slot, setSlot] = useState(null);
+  const [auto, setAuto] = useState(false); // let the server pick a free slot
   const [form, setForm] = useState(EMPTY);
   const [reservation, setReservation] = useState(null);
   const [linkRes, setLinkRes] = useState(false);
@@ -65,11 +66,11 @@ export default function VehicleEntry() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!slot) return toast.error('Select the slot where the vehicle is parked');
+    if (!slot && !auto) return toast.error('Tap a slot on the map, or use Auto-assign');
     setBusy(true);
     try {
       const { data } = await api.post('/records/entry', {
-        facilityId: selectedId, floorId, slotId: slot._id, ...form, regNumber: reg, reservationId: linkRes ? reservation._id : undefined,
+        facilityId: selectedId, floorId, slotId: slot ? slot._id : 'auto', ...form, regNumber: reg, reservationId: linkRes ? reservation._id : undefined,
       });
       setDone(data); reload(); loadFloors(); setTick((t) => t + 1);
     } catch (err) {
@@ -137,9 +138,12 @@ export default function VehicleEntry() {
 
           <div className="rounded-lg bg-slate-50 p-3 text-sm">
             <p className="text-xs font-semibold text-slate-500">Selected slot</p>
-            <p className="font-bold text-slate-900">{slot ? `${floor?.name} · ${slot.name}` : 'None yet'}</p>
+            <p className="font-bold text-slate-900">{slot ? `${floor?.name} · ${slot.name}` : auto ? 'Auto: system picks a free slot' : 'None yet'}</p>
           </div>
-          <button className="btn-primary w-full" disabled={busy || !slot || reg.length < 5}>{busy && <Loader2 className="h-4 w-4 animate-spin" />}Confirm entry</button>
+          <button type="button" className={`${auto ? "btn-primary" : "btn-secondary"} mb-3 w-full`} onClick={() => { setAuto(!auto); if (!auto) setSlot(null); }}>
+            {auto ? "Auto-assign is on (click to turn off)" : "Auto-assign a free slot"}
+          </button>
+          <button className="btn-primary w-full" disabled={busy || (!slot && !auto) || reg.length < 5}>{busy && <Loader2 className="h-4 w-4 animate-spin" />}Confirm entry</button>
         </div>
 
         <div className="card p-5 xl:col-span-2">

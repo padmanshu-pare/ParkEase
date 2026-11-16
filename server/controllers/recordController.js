@@ -18,13 +18,15 @@ const populateRecord = (q) =>
 
 // ---------- ENTRY ----------
 exports.entry = asyncHandler(async (req, res) => {
-  const { facilityId, floorId, slotId, reservationId } = req.body;
+  const { facilityId, reservationId } = req.body;
+  let { floorId, slotId } = req.body;
+  const autoSlot = !slotId || slotId === 'auto'; // staff chose auto-assign
   // Free-text limits: keeps stored data small and blocks oversized input
   const ownerName = typeof req.body.ownerName === 'string' ? req.body.ownerName.trim().slice(0, 80) : undefined;
   const ownerPhone = typeof req.body.ownerPhone === 'string' ? req.body.ownerPhone.trim().slice(0, 15) : undefined;
   const regNumber = normalizeReg(req.body.regNumber);
   if (!isValidReg(regNumber)) throw httpError(400, 'Enter a valid vehicle number (letters and digits only, 5 to 12 characters)');
-  if (!mongoose.isValidObjectId(slotId)) throw httpError(400, 'Select a parking slot');
+  if (!autoSlot && !mongoose.isValidObjectId(slotId)) throw httpError(400, 'Select a parking slot');
   await assertActiveFacility(req.user, facilityId);
 
   if (await ParkingRecord.exists({ regNumber, status: 'active' })) {
@@ -42,13 +44,29 @@ exports.entry = asyncHandler(async (req, res) => {
   } else {
     reservation = await findReservationForEntry(facilityId, regNumber);
   }
-  if (reservation && String(reservation.slot) !== String(slotId)) {
+  if (reservation && !autoSlot && String(reservation.slot) !== String(slotId)) {
     const booked = await ParkingSlot.findById(reservation.slot).select('name').lean();
     throw httpError(409, `This vehicle has a booking for slot ${booked ? booked.name : ''}. Park it in that slot.`);
   }
   // A walk-in cannot take a slot that is held for a booking starting soon
   if (!reservation && (await blockedSlotIds(facilityId)).has(String(slotId))) {
     throw httpError(409, 'This slot is reserved for a booking starting soon. Pick another slot.');
+  }
+  // Auto-assign: use the booked slot, or the first free slot that no booking is holding
+  if (autoSlot) {
+    if (reservation) {
+      slotId = String(reservation.slot);
+      floorId = String(reservation.floor);
+    } else {
+      const holding = await blockedSlotIds(facilityId);
+      const q = { facility: facilityId, status: 'available' };
+      if (floorId && mongoose.isValidObjectId(floorId)) q.floor = floorId;
+      const candidates = await ParkingSlot.find(q).sort('name').select('_id floor').lean();
+      const free = candidates.find((c) => !holding.has(String(c._id)));
+      if (!free) throw httpError(409, 'No free slot is available right now');
+      slotId = String(free._id);
+      floorId = String(free.floor);
+    }
   }
   const slotWasReserved = Boolean(reservation);
 
