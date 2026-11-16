@@ -1,12 +1,23 @@
-import { Printer } from 'lucide-react';
+import { useState } from 'react';
+import { Printer, MessageCircle } from 'lucide-react';
 import { Modal } from '../common/ui';
 import { money, fmtDateTime, fmtDuration } from '../../utils/format';
+import { normalizeIndianPhone, receiptText, whatsappLink } from '../../utils/whatsapp';
 
 export default function Receipt({ data, onClose }) {
+  const [phone, setPhone] = useState(data?.record?.ownerPhone || '');
   if (!data) return null;
   const { record, amount, breakdown } = data;
   const pay = record.payment;
+  const phoneNo = normalizeIndianPhone(phone);
+
   const Row = ({ k, v }) => <div className="flex justify-between py-1.5 text-sm"><dt className="text-slate-500">{k}</dt><dd className="text-right font-semibold text-slate-900">{v}</dd></div>;
+
+  const sendWhatsApp = () => {
+    if (!phoneNo) return;
+    window.open(whatsappLink(phoneNo, receiptText(record, amount)), '_blank', 'noopener');
+  };
+
   return (
     <Modal open onClose={onClose} title="Checkout complete">
       <div className="print-area">
@@ -28,7 +39,23 @@ export default function Receipt({ data, onClose }) {
           <span className="text-2xl font-extrabold text-slate-900">{money(amount)}</span>
         </div>
       </div>
-      <div className="mt-5 flex gap-2">
+
+      <div className="no-print mt-5 rounded-lg border border-slate-200 p-3">
+        <label className="label" htmlFor="wa-phone">Send receipt on WhatsApp</label>
+        <div className="flex gap-2">
+          <input
+            id="wa-phone" type="tel" inputMode="numeric" className="input" placeholder="Customer mobile, e.g. 98765 43210"
+            value={phone} onChange={(e) => setPhone(e.target.value)}
+          />
+          <button type="button" className="btn-primary shrink-0" onClick={sendWhatsApp} disabled={!phoneNo}>
+            <MessageCircle className="h-4 w-4" />Send
+          </button>
+        </div>
+        {phone && !phoneNo && <p className="mt-2 text-xs text-amber-700">Enter a valid 10-digit mobile number.</p>}
+        <p className="mt-2 text-xs text-slate-500">WhatsApp opens with the receipt filled in. Press Send there.</p>
+      </div>
+
+      <div className="no-print mt-5 flex gap-2">
         <button className="btn-secondary flex-1" onClick={() => window.print()}><Printer className="h-4 w-4" />Print receipt</button>
         <button className="btn-primary flex-1" onClick={onClose}>Done</button>
       </div>
