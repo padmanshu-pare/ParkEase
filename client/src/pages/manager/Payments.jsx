@@ -5,12 +5,14 @@ import api, { errMsg } from '../../services/api';
 import { useFacility } from '../../context/FacilityContext';
 import { PageHeader, Badge, Pagination, Empty, Spinner, NoFacility } from '../../components/common/ui';
 import { fmtDateTime, money, todayISO } from '../../utils/format';
+import PaymentDetail from '../../components/payments/PaymentDetail';
 
 export default function Payments() {
   const { selectedId } = useFacility();
   const [f, setF] = useState({ from: todayISO(), to: todayISO(), method: '' });
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
+  const [detail, setDetail] = useState(null);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -18,6 +20,8 @@ export default function Payments() {
     api.get('/payments', { params: { facility: selectedId, page, ...Object.fromEntries(Object.entries(f).filter(([, v]) => v)) } })
       .then((r) => setData(r.data)).catch((e) => toast.error(errMsg(e)));
   }, [selectedId, f, page]);
+
+  const openDetail = (id) => api.get(`/payment-details/${id}`).then((r) => setDetail(r.data)).catch((e) => toast.error(errMsg(e)));
 
   const set = (p) => { setF({ ...f, ...p }); setPage(1); };
   if (!selectedId) return <NoFacility />;
@@ -51,7 +55,7 @@ export default function Payments() {
                 <thead className="border-b border-slate-200 bg-slate-50"><tr>{['Receipt', 'Vehicle', 'Paid at', 'Method', 'Transaction', 'Amount', 'Status'].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {data.items.map((p) => (
-                    <tr key={p._id} className="hover:bg-slate-50">
+                    <tr key={p._id} className="cursor-pointer hover:bg-slate-50" onClick={() => openDetail(p._id)} title="Click to see the car visit details">
                       <td className="td font-mono text-xs">{p.receiptNo}</td>
                       <td className="td"><span className="plate">{p.regNumber}</span></td>
                       <td className="td text-slate-600">{fmtDateTime(p.paidAt)}</td>
@@ -68,6 +72,7 @@ export default function Payments() {
           </>
         ) : <Empty icon={Wallet} title="No payments in this range">Payments appear here after a vehicle exit with a charge.</Empty>}
       </div>
+      <PaymentDetail data={detail} onClose={() => setDetail(null)} />
     </>
   );
 }
