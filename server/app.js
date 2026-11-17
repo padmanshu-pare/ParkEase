@@ -24,6 +24,7 @@ app.use(mongoSanitize());
 
 app.use('/api', apiLimiter);
 app.use('/api', demoGuard);
+app.use('/api', require('./middleware/audit'));
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/driver/signup', signupLimiter);
 
@@ -37,6 +38,7 @@ app.use('/api/records', require('./routes/recordRoutes'));
 app.use('/api/plates', require('./routes/plateRoutes'));
 app.use('/api/payment-details', require('./routes/paymentDetailRoutes'));
 app.use('/api/ops', require('./routes/opsRoutes'));
+app.use('/api/audit', require('./routes/auditRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/pricing', require('./routes/pricingRoutes'));

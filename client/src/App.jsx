@@ -11,6 +11,7 @@ import History from './pages/manager/History';
 import Payments from './pages/manager/Payments';
 import LayoutDesigner from './pages/manager/LayoutDesigner';
 import Reservations from './pages/manager/Reservations';
+import AuditLog from './pages/manager/AuditLog';
 import Settings from './pages/manager/Settings';
 import Facilities from './pages/admin/Facilities';
 import Managers from './pages/admin/Managers';
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="history" element={<History />} />
           <Route path="payments" element={<Payments />} />
           <Route path="reservations" element={<Reservations />} />
+          <Route path="audit" element={<AuditLog />} />
           <Route path="designer" element={<LayoutDesigner />} />
           <Route path="settings" element={<Settings />} />
           <Route element={<ProtectedRoute adminOnly />}>
