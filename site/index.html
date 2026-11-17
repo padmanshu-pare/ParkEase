@@ -4,12 +4,24 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ParkEase: Smart Parking, Managed in Real Time</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
-<link rel="apple-touch-icon" href="favicon.svg" />
-<meta name="theme-color" content="#0a1633" />
 <meta name="description" content="ParkEase shows live free parking slots, records vehicles by number plate, bills automatically, and lets drivers book ahead. Built on the MERN stack." />
 <meta property="og:title" content="ParkEase: Smart Parking, Managed in Real Time" />
 <meta property="og:description" content="Live slot availability, number plate entry and exit, automatic billing, and driver bookings in one platform." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://parkease-site.vercel.app/" />
+<meta property="og:site_name" content="ParkEase" />
+<meta property="og:image" content="https://parkease-site.vercel.app/images/og-preview.png" />
+<meta property="og:image:secure_url" content="https://parkease-site.vercel.app/images/og-preview.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="ParkEase layout designer and live parking dashboard" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="ParkEase: Smart Parking, Managed in Real Time" />
+<meta name="twitter:description" content="Live slot availability, number plate entry and exit, automatic billing, and driver bookings." />
+<meta name="twitter:image" content="https://parkease-site.vercel.app/images/og-preview.png" />
+<meta name="theme-color" content="#0a1633" />
+<link rel="canonical" href="https://parkease-site.vercel.app/" />
 <style>
   :root {
     --navy: #0a1633; --navy-2: #13244d; --brand: #3b82f6; --brand-2: #2563eb; --accent: #22c55e; --amber: #f59e0b;
@@ -160,6 +172,15 @@
   footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; }
   footer a { color: #cbd5e1; }
 
+  /* Demo form */
+  .split { align-items: start; }
+  .field { display: grid; gap: 6px; margin-bottom: 14px; }
+  .field label { font-size: 14px; font-weight: 700; color: var(--text); }
+  .field input, .field select, .field textarea { font: inherit; font-size: 15px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--brand); border-color: var(--brand); }
+  .btn-primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff; }
+  .case-link { display: inline-block; margin-top: 14px; font-weight: 700; color: var(--brand-2); text-decoration: none; }
+
   /* Reveal on scroll */
   .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
   .reveal.in { opacity: 1; transform: none; }
@@ -191,6 +212,7 @@
       <a href="#business">Business</a>
       <a href="#roadmap">Roadmap</a>
       <a href="#faq">FAQ</a>
+      <a href="#demo">Book a demo</a>
       <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">Dark</button>
       <a class="nav-cta" href="https://park-ease-henna.vercel.app" target="_blank" rel="noopener">Live demo</a>
     </nav>
@@ -454,6 +476,43 @@
   </div>
 </section>
 
+<section id="demo" class="band">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">Book a demo</span>
+      <h2>See ParkEase on your own parking lot.</h2>
+      <p class="lead" style="margin-bottom:18px">Tell us a little about your parking. We will call or message you within 2 working days, and show you the live app with a sample lot.</p>
+      <ul class="panel" style="padding:22px 26px;list-style:none">
+        <li style="padding:8px 0;color:var(--muted)">Free 30-minute walkthrough</li>
+        <li style="padding:8px 0;color:var(--muted)">Pilot offer for the first lot, with clear terms</li>
+        <li style="padding:8px 0;color:var(--muted)">No obligation, and your data stays yours</li>
+      </ul>
+    </div>
+    <form id="demoForm" class="panel" novalidate>
+      <div class="field"><label for="f-name">Your name</label><input id="f-name" name="name" required autocomplete="name" /></div>
+      <div class="field"><label for="f-org">Organisation or lot name</label><input id="f-org" name="organisation" required /></div>
+      <div class="field"><label for="f-type">Type of parking</label>
+        <select id="f-type" name="type" required>
+          <option value="">Choose one</option>
+          <option>Mall or shopping centre</option>
+          <option>Hospital</option>
+          <option>Office or business park</option>
+          <option>Housing society</option>
+          <option>College or school</option>
+          <option>Event or stadium</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label for="f-city">City</label><input id="f-city" name="city" required /></div>
+      <div class="field"><label for="f-vehicles">Vehicles per day (rough)</label><input id="f-vehicles" name="vehicles_per_day" inputmode="numeric" /></div>
+      <div class="field"><label for="f-contact">Mobile or email</label><input id="f-contact" name="contact" required /></div>
+      <div class="field"><label for="f-msg">Anything we should know? (optional)</label><textarea id="f-msg" name="message" rows="3"></textarea></div>
+      <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center">Request my demo</button>
+      <p id="demoStatus" role="status" style="font-size:14px;color:var(--muted);margin:14px 0 0"></p>
+    </form>
+  </div>
+</section>
+
 <section>
   <div class="wrap">
     <div class="cta reveal">
@@ -521,6 +580,34 @@
   // Reveal sections on scroll
   const io = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+<script>
+  // Set FORM_ENDPOINT to your Formspree (or similar) form URL, e.g. https://formspree.io/f/abcd1234
+  // Leave it empty and the form opens an email to the team instead.
+  const FORM_ENDPOINT = '';
+  const TEAM_EMAIL = 'hello@example.com'; // replace with your real address
+  const form = document.getElementById('demoForm');
+  const statusEl = document.getElementById('demoStatus');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) { statusEl.textContent = 'Please fill the required fields.'; form.reportValidity(); return; }
+    const data = Object.fromEntries(new FormData(form).entries());
+    if (!FORM_ENDPOINT) {
+      const body = Object.entries(data).map(([k, v]) => `${k}: ${v}`).join('\n');
+      location.href = `mailto:${TEAM_EMAIL}?subject=${encodeURIComponent('ParkEase demo request')}&body=${encodeURIComponent(body)}`;
+      statusEl.textContent = 'Your email app should open with the details. Press send there.';
+      return;
+    }
+    statusEl.textContent = 'Sending...';
+    try {
+      const r = await fetch(FORM_ENDPOINT, { method: 'POST', headers: { Accept: 'application/json' }, body: new FormData(form) });
+      if (!r.ok) throw new Error('failed');
+      form.reset();
+      statusEl.textContent = 'Thank you. We will contact you within 2 working days.';
+    } catch {
+      statusEl.textContent = 'Could not send right now. Please email ' + TEAM_EMAIL + ' instead.';
+    }
+  });
 </script>
 </body>
 </html>

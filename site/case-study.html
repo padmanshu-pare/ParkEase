@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Case study: [Lot name] with ParkEase</title>
+<meta name="description" content="How [Lot name] used ParkEase for [X] weeks: real numbers from the pilot." />
+<style>
+  :root { --bg:#f5f8ff; --card:#fff; --text:#0f172a; --muted:#5b6b86; --line:#e2e8f4; --brand:#3b82f6; --brand-2:#2563eb; --navy:#0a1633; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+  .wrap { width: min(860px, 92%); margin: 0 auto; }
+  header { background: var(--navy); color:#fff; }
+  header .wrap { display:flex; justify-content:space-between; align-items:center; height:60px; }
+  header a { color:#fff; text-decoration:none; font-weight:800; }
+  header span { color:#9db0d0; font-size:14px; }
+  .hero { padding: 64px 0 36px; }
+  .eyebrow { font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--brand-2); }
+  h1 { font-size: clamp(28px, 4.5vw, 40px); line-height:1.15; margin: 10px 0 14px; letter-spacing:-0.02em; }
+  .lead { color:var(--muted); font-size:18px; margin:0; }
+  .note { background:#fef3c7; color:#78350f; border-radius:12px; padding:14px 18px; font-size:14px; margin: 24px 0; }
+  .stats { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin: 26px 0 8px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; }
+  .stat .val { font-size:30px; font-weight:900; color:var(--brand-2); }
+  .stat .lbl { color:var(--muted); font-size:14px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:28px 30px; margin: 18px 0; }
+  section h2 { font-size:21px; margin:0 0 10px; }
+  section p, section li { color:#334155; }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .ph { background:#eef4ff; color:#1e3a8a; padding:1px 6px; border-radius:6px; font-weight:700; }
+  .quote { border-left:4px solid var(--brand); padding:4px 0 4px 16px; font-style:italic; color:#334155; margin:0; }
+  footer { color:var(--muted); font-size:14px; text-align:center; padding:30px 0 50px; }
+  footer a { color:var(--brand-2); }
+  @media (max-width: 640px) { .stats { grid-template-columns: 1fr; } section { padding:22px; } }
+</style>
+</head>
+<body>
+<header><div class="wrap"><a href="index.html">ParkEase</a><span>Case study</span></div></header>
+
+<div class="wrap hero">
+  <span class="eyebrow">Pilot case study</span>
+  <h1>[Lot name]: from paper slips to live parking in [X] weeks</h1>
+  <p class="lead">[City], [type of lot], [number of slots] slots. Pilot ran from [start date] to [end date].</p>
+</div>
+
+<div class="wrap">
+  <div class="note"><strong>Draft template.</strong> Replace every item in <span class="ph">[brackets]</span> with real numbers from the pilot. Do not publish a number you have not measured. Remove this box before publishing.</div>
+
+  <div class="stats">
+    <div class="stat"><div class="val">[X] vehicles</div><div class="lbl">Recorded per day on average</div></div>
+    <div class="stat"><div class="val">[X] min</div><div class="lbl">Average entry time, before: [X] min</div></div>
+    <div class="stat"><div class="val">[X]%</div><div class="lbl">Revenue change over the same period</div></div>
+  </div>
+
+  <section>
+    <h2>The problem</h2>
+    <p>Before ParkEase, [lot name] tracked vehicles on paper. Staff could not tell how many slots were free at any time, and fees at exit depended on memory. [Add one or two specific problems the manager described.]</p>
+  </section>
+
+  <section>
+    <h2>What we set up</h2>
+    <ul>
+      <li>Floor layout drawn in the designer, published as [X] live slots</li>
+      <li>Entry and exit with number plate capture, and fees calculated by the system</li>
+      <li>Live availability for staff, and a public page showing free slots</li>
+      <li>Driver bookings for [X] days, with payment held for 15 minutes</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Results</h2>
+    <table>
+      <tr><th>Measure</th><th>Before</th><th>After pilot</th></tr>
+      <tr><td>Average entry time</td><td>[X] min</td><td>[X] min</td></tr>
+      <tr><td>Vehicles recorded per day</td><td>[X]</td><td>[X]</td></tr>
+      <tr><td>Fee disputes at exit</td><td>[X] per week</td><td>[X] per week</td></tr>
+      <tr><td>Slots that were double-booked</td><td>[X]</td><td>0 (blocked by the system)</td></tr>
+      <tr><td>Revenue per month</td><td>₹[X]</td><td>₹[X]</td></tr>
+    </table>
+    <p style="margin-top:14px;font-size:14px;color:var(--muted)">Source: ParkEase records for [start date] to [end date]. Figures are for this lot only and may differ elsewhere.</p>
+  </section>
+
+  <section>
+    <h2>What the team said</h2>
+    <p class="quote">"[A short quote from the manager or staff, approved by them in writing.]"</p>
+    <p style="margin-top:10px;color:var(--muted)">— [Name], [Role], [Lot name]</p>
+  </section>
+
+  <section>
+    <h2>What's next</h2>
+    <p>[What the lot plans to do next: more floors, monthly passes, online payments.]</p>
+  </section>
+
+  <p style="text-align:center"><a class="case-link" href="index.html#demo">Book a demo for your lot</a></p>
+</div>
+
+<footer><div class="wrap">ParkEase · <a href="index.html">Home</a> · Results may vary between lots.</div></footer>
+</body>
+</html>

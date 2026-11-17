@@ -19,3 +19,12 @@ A single static page to present ParkEase to investors, professors, and users.
 ## Notes
 - The "live floor" in the hero is a demo animation for presentation. It does not show real data.
 - Nothing on the page claims user counts, revenue, or awards that are not verified.
+
+## Demo form
+The "Book a demo" form works in two ways:
+1. Set `FORM_ENDPOINT` in `index.html` to your form URL (free at formspree.io: create a form, copy its URL). Submissions then arrive in your email.
+2. If `FORM_ENDPOINT` is empty, the form opens an email to `TEAM_EMAIL` with the details filled in.
+Also replace `hello@example.com` with your real address.
+
+## Case study
+`case-study.html` is a template. Replace every `[bracketed]` item with real pilot numbers and an approved quote. Do not publish invented numbers. Link it from the home page once it is filled in.
